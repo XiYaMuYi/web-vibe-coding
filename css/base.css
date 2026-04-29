@@ -1,0 +1,66 @@
+:root {
+  color-scheme: dark;
+  --panel-bg: rgba(8, 12, 24, 0.54);
+  --panel-border: rgba(255, 255, 255, 0.1);
+  --scanline: rgba(255, 255, 255, 0.035);
+}
+
+html,
+body {
+  width: 100%;
+  min-height: 100%;
+  margin: 0;
+  background:
+    radial-gradient(circle at top, rgba(72, 113, 247, 0.18), transparent 35%),
+    linear-gradient(180deg, #02040b 0%, #050816 50%, #02040b 100%);
+  overflow-x: hidden;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+body {
+  min-height: 100vh;
+}
+
+html,
+body,
+button,
+a,
+input,
+textarea,
+select {
+  cursor: crosshair;
+}
+
+button:hover,
+a:hover,
+[role='button']:hover,
+.btn-soft:hover,
+#optionList button:hover {
+  cursor: crosshair;
+}
+
+#app button:hover,
+#app [data-to]:hover,
+#app .glass-panel:hover {
+  cursor: crosshair;
+}
+
+#optionList button:hover {
+  cursor: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24'%3E%3Ccircle cx='12' cy='12' r='3' fill='%237df9ff' fill-opacity='.92'/%3E%3Cpath d='M12 1v4M12 19v4M1 12h4M19 12h4' stroke='%237df9ff' stroke-width='1.4' stroke-linecap='round'/%3E%3C/svg%3E") 12 12, crosshair;
+}
+
+.story-title,
+#storyTitle,
+h1,
+h2 {
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-shadow: 0 2px 4px rgba(0,0,0,0.5);
+}
+
+#storyText {
+  font-size: 1.05rem;
+  line-height: 1.7;
+  color: rgba(255, 255, 255, 0.85);
+}

@@ -1,20 +1,9 @@
 const AppController = (() => {
-  let unbindInteraction = null;
-  let currentNodeId = null;
   let booted = false;
   let hiddenClickCount = 0;
   let hiddenClickTimer = null;
   let hiddenHoldTimer = null;
   let hiddenHoldStart = 0;
-  let overrideMode = false;
-
-  function getStory() {
-    return window.StoryRenderer?.getStory?.();
-  }
-
-  function getNode(nodeId) {
-    return getStory()?.nodes?.[nodeId] ?? null;
-  }
 
   function clearModal() {
     const modal = document.getElementById('cameraModal');
@@ -36,13 +25,6 @@ const AppController = (() => {
     document.body.classList.remove('screen-flash');
   }
 
-  function setOverrideMode(enabled) {
-    overrideMode = enabled;
-    document.getElementById('app')?.classList.toggle('system-override', enabled);
-    document.getElementById('stage')?.classList.toggle('stage-fade', enabled);
-    document.querySelector('.story-viewport')?.classList.toggle('stage-fade', enabled);
-  }
-
   function showCameraModal() {
     const modal = document.getElementById('cameraModal');
     if (modal) modal.classList.remove('hidden');
@@ -50,7 +32,9 @@ const AppController = (() => {
 
   function hideCameraModal() {
     clearModal();
-    setOverrideMode(false);
+    document.getElementById('app')?.classList.remove('system-override');
+    document.getElementById('stage')?.classList.remove('stage-fade');
+    document.querySelector('.story-viewport')?.classList.remove('stage-fade');
     window.CameraEgg?.stopCamera?.();
   }
 
@@ -77,47 +61,19 @@ const AppController = (() => {
       window.CameraEgg?.stopCamera?.();
     } catch (error) {
       console.error(error);
-      status.textContent = '系统未能连接您的光学传感器，请返回主线或检查权限。';
+      if (preview) preview.classList.add('hidden');
+      status.textContent = '摄像头权限被拒绝或不可用，请检查浏览器权限后重试。';
       window.CameraEgg?.stopCamera?.();
     }
   }
 
-  function finalizeTransition(nextId) {
-    if (!nextId) return;
-    unbindInteraction?.();
-    unbindInteraction = null;
-    window.InteractionController?.unbind?.();
-    currentNodeId = nextId;
-    window.StoryRenderer?.renderNode?.(nextId);
-    bindCurrentNode();
-  }
-
-  function goToNode(nextId) {
-    finalizeTransition(nextId);
-  }
-
-  function applyFxThemeForNode(node) {
-    const fx = node?.fxTheme;
-    if (!fx || !window.FxEngine?.setTheme) return;
-    window.FxEngine.setTheme(fx.trailType, fx.impactType, fx.colorHex);
-  }
-
-  function bindCurrentNode() {
-    const node = getNode(currentNodeId);
-    if (!node) return;
-    if (node.audio?.bgm) window.AudioManager?.fadeBGM?.(node.audio.bgm);
-    applyFxThemeForNode(node);
-    unbindInteraction = window.InteractionController?.bind?.(node.interaction, (nextId) => {
-      finalizeTransition(nextId || node.successTo || node.options?.[0]?.to);
-    }) ?? null;
-  }
-
   function bindOptionButtons() {
-    const options = document.getElementById('optionList');
-    options?.addEventListener('click', (event) => {
+    document.getElementById('optionList')?.addEventListener('click', (event) => {
       const button = event.target.closest('button[data-to]');
-      if (!button) return;
-      goToNode(button.dataset.to);
+      if (!button || button.disabled) return;
+      const to = button.dataset.to;
+      const setFlags = button.dataset.setFlags ? JSON.parse(button.dataset.setFlags) : null;
+      window.Navigator?.goTo?.(to, setFlags ? { setFlags } : null);
     });
   }
 
@@ -144,7 +100,8 @@ const AppController = (() => {
   function triggerHiddenEgg() {
     resetHiddenEggState();
     applyWhiteFlash();
-    setOverrideMode(true);
+    document.getElementById('app')?.classList.add('system-override');
+    document.getElementById('stage')?.classList.add('stage-fade');
     window.setTimeout(() => {
       window.CameraEgg?.showModal?.();
       showCameraModal();
@@ -203,20 +160,16 @@ const AppController = (() => {
     if (booted) return;
     booted = true;
 
+    window.DeviceManager?.init?.();
     window.FxEngine?.init?.();
 
-    try {
-      await window.StoryRenderer?.boot?.();
-    } catch (_) {
-      return;
-    }
-
-    const story = getStory();
-    currentNodeId = story?.meta?.startNode ?? 'node_000';
-    window.StoryRenderer?.renderNode?.(currentNodeId);
-    bindCurrentNode();
+    const story = await window.StoryRenderer?.boot?.();
+    window.Navigator?.init?.(story);
     bindOptionButtons();
     bindHiddenEgg();
+
+    const startNode = story?.meta?.startNode ?? 'node_000';
+    window.Navigator?.goTo?.(startNode);
 
     document.getElementById('cameraCloseBtn')?.addEventListener('click', hideCameraModal);
     document.getElementById('cameraGenerateBtn')?.addEventListener('click', handleCameraGenerate);
@@ -225,13 +178,9 @@ const AppController = (() => {
       if (url) window.CameraEgg?.downloadCard?.(url);
       hideCameraModal();
     });
-
-    document.addEventListener('story:goto', (event) => {
-      if (event.detail?.to) goToNode(event.detail.to);
-    });
   }
 
-  return { boot, goToNode, showCameraModal, hideCameraModal };
+  return { boot, showCameraModal, hideCameraModal };
 })();
 
 window.AppController = AppController;

@@ -69,6 +69,7 @@ const InteractionController = (() => {
     mashCount = 0;
 
     const handleTap = (event) => {
+      event.preventDefault?.();
       const now = Date.now();
       if (now - lastTapAt < 60) return;
       lastTapAt = now;
@@ -86,7 +87,6 @@ const InteractionController = (() => {
         vibrate([70, 40, 110]);
         complete(interaction, onComplete);
       }
-      event.preventDefault?.();
     };
 
     document.addEventListener('click', handleTap, { passive: false });

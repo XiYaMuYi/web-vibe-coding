@@ -4,10 +4,10 @@ const state = {
   bgActiveIndex: 0,
   typingTimer: null,
   isBooted: false,
-  backgroundPanTimer: null,
 };
 
 const el = {
+  app: document.getElementById('app'),
   nodeId: document.getElementById('nodeId'),
   title: document.getElementById('storyTitle'),
   text: document.getElementById('storyText'),
@@ -15,6 +15,7 @@ const el = {
   badge: document.getElementById('interactionBadge'),
   bgA: document.getElementById('bgLayerA'),
   bgB: document.getElementById('bgLayerB'),
+  stage: document.getElementById('stage'),
 };
 
 const bgLayers = [el.bgA, el.bgB];
@@ -46,46 +47,40 @@ function isPlaceholderUrl(url = '') {
   return !url || url.includes('cdn.example.com');
 }
 
-function applyFallbackArt(layer) {
-  layer.dataset.fallback = 'true';
-  layer.style.backgroundImage = [
-    'radial-gradient(circle at 20% 20%, rgba(56,189,248,0.16), transparent 0 32%)',
-    'radial-gradient(circle at 80% 30%, rgba(168,85,247,0.12), transparent 0 28%)',
-    'radial-gradient(circle at 50% 110%, rgba(15,23,42,0.05), rgba(2,6,23,0.96) 64%)',
-    'linear-gradient(180deg, rgba(15,23,42,0.78), rgba(2,6,23,0.98))'
-  ].join(', ');
+function normalizeAssetPath(url = '') {
+  if (!url) return '';
+  if (/^(https?:)?\/\//.test(url) || url.startsWith('data:') || url.startsWith('./') || url.startsWith('/')) return url;
+  return `./${url.replace(/^\.?\/?/, '')}`;
 }
 
 function applyBackgroundImage(layer, url) {
-  if (isPlaceholderUrl(url)) {
-    applyFallbackArt(layer);
+  const resolvedUrl = normalizeAssetPath(url);
+  if (isPlaceholderUrl(resolvedUrl)) {
+    layer.dataset.fallback = 'true';
+    layer.style.backgroundImage = [
+      'radial-gradient(circle at 20% 20%, rgba(56,189,248,0.16), transparent 0 32%)',
+      'radial-gradient(circle at 80% 30%, rgba(168,85,247,0.12), transparent 0 28%)',
+      'radial-gradient(circle at 50% 110%, rgba(15,23,42,0.05), rgba(2,6,23,0.96) 64%)',
+      'linear-gradient(180deg, rgba(15,23,42,0.78), rgba(2,6,23,0.98))'
+    ].join(', ');
     return;
   }
 
   const img = new Image();
   img.onload = () => {
     layer.dataset.fallback = 'false';
-    layer.style.backgroundImage = `url('${url}')`;
+    layer.style.backgroundImage = `url('${resolvedUrl}')`;
   };
-  img.onerror = () => applyFallbackArt(layer);
-  img.src = url;
-}
-
-function startKenBurns(layer, seed = 0) {
-  stopKenBurns();
-  let t = 0;
-  state.backgroundPanTimer = window.setInterval(() => {
-    t += 1;
-    const scale = 1 + Math.min(0.05, 0.00028 * t);
-    const x = Math.sin((t + seed) / 140) * 10;
-    const y = Math.cos((t + seed) / 170) * 8;
-    layer.style.transform = `translate3d(${x.toFixed(2)}px, ${y.toFixed(2)}px, 0) scale(${scale.toFixed(5)})`;
-  }, 80);
-}
-
-function stopKenBurns() {
-  if (state.backgroundPanTimer) clearInterval(state.backgroundPanTimer);
-  state.backgroundPanTimer = null;
+  img.onerror = () => {
+    layer.dataset.fallback = 'true';
+    layer.style.backgroundImage = [
+      'radial-gradient(circle at 20% 20%, rgba(56,189,248,0.16), transparent 0 32%)',
+      'radial-gradient(circle at 80% 30%, rgba(168,85,247,0.12), transparent 0 28%)',
+      'radial-gradient(circle at 50% 110%, rgba(15,23,42,0.05), rgba(2,6,23,0.96) 64%)',
+      'linear-gradient(180deg, rgba(15,23,42,0.78), rgba(2,6,23,0.98))'
+    ].join(', ');
+  };
+  img.src = resolvedUrl;
 }
 
 function setBackground(node) {
@@ -96,11 +91,10 @@ function setBackground(node) {
   if (!activeLayer || !idleLayer) return;
 
   activeLayer.style.opacity = '1';
+  activeLayer.style.transform = 'scale(1)';
   activeLayer.classList.add('is-active');
   activeLayer.classList.remove('is-idle');
   applyBackgroundImage(activeLayer, node.background?.image ?? '');
-  activeLayer.style.transform = 'translate3d(0,0,0) scale(1)';
-  window.requestAnimationFrame(() => startKenBurns(activeLayer, state.currentNodeId?.length ?? 0));
 
   idleLayer.classList.remove('is-active');
   idleLayer.classList.add('is-idle');
@@ -116,24 +110,41 @@ function renderTypewriter(text, speed = 24) {
   const chars = [...(text ?? '')];
   let index = 0;
 
-  state.typingTimer = setInterval(() => {
+  const tick = () => {
     el.text.textContent += chars[index] ?? '';
     index += 1;
     if (index >= chars.length) {
       clearInterval(state.typingTimer);
       state.typingTimer = null;
+      return;
     }
+    state.typingTimer = window.setTimeout(() => {
+      requestAnimationFrame(tick);
+    }, speed);
+  };
+
+  state.typingTimer = window.setTimeout(() => {
+    requestAnimationFrame(tick);
   }, speed);
+}
+
+function isLockedOption(option) {
+  return !window.Navigator?.checkCondition?.(option.requires);
 }
 
 function renderOptions(options = []) {
   el.options.innerHTML = '';
   options.forEach((option) => {
+    const locked = isLockedOption(option);
     const button = document.createElement('button');
     button.type = 'button';
-    button.className = 'btn-soft rounded-2xl border border-white/10 bg-black/20 px-4 py-3 text-left text-sm text-white/88 backdrop-blur-xl transition-all duration-200 hover:border-cyan-300/25 hover:bg-white/8 hover:shadow-[0_0_28px_rgba(125,249,255,0.10)] active:scale-95 active:bg-white/12';
-    button.textContent = option.label;
-    button.dataset.to = option.to;
+    button.className = locked
+      ? 'btn-soft rounded-2xl border border-white/10 bg-black/20 px-4 py-3 text-left text-sm text-white/45 backdrop-blur-xl transition-opacity transition-transform transition-filter opacity-60 cursor-not-allowed'
+      : 'btn-soft rounded-2xl border border-white/10 bg-black/20 px-4 py-3 text-left text-sm text-white/88 backdrop-blur-xl transition-opacity transition-transform transition-filter hover:border-cyan-300/25 hover:bg-white/8 active:scale-95 active:bg-white/12';
+    button.textContent = locked ? `🔒 ${option.label}` : option.label;
+    button.dataset.to = option.to ?? '';
+    if (option.setFlags) button.dataset.setFlags = JSON.stringify(option.setFlags);
+    if (locked) button.disabled = true;
     el.options.appendChild(button);
   });
 }
@@ -155,9 +166,19 @@ function renderInteraction(interaction) {
   el.badge.classList.remove('hidden');
 }
 
+function applyLayout(node) {
+  const layout = node.layout ?? 'fullscreen-cinematic';
+  const root = el.app;
+  if (!root) return;
+  root.classList.remove('layout-fullscreen-cinematic', 'layout-character-dialogue', 'layout-terminal-override');
+  root.classList.add(`layout-${layout}`);
+}
+
 function renderNode(nodeId) {
   const node = getNode(nodeId);
   if (!node) return;
+
+  applyLayout(node);
 
   state.currentNodeId = node.id;
   window.StoryRenderer.currentNodeId = node.id;
@@ -169,16 +190,11 @@ function renderNode(nodeId) {
       storyImage.src = 'data:image/svg+xml;charset=UTF-8,' + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="800"><rect width="100%" height="100%" fill="#0b1020"/><text x="50%" y="50%" fill="#9ca3af" font-size="36" text-anchor="middle" dominant-baseline="middle">视觉资源加载失败</text></svg>');
     };
     if (node.background?.image) storyImage.src = node.background.image;
-    storyImage.style.opacity = '0';
-    window.requestAnimationFrame(() => {
-      storyImage.style.opacity = '1';
-      storyImage.style.transform = 'scale(1.03)';
-    });
   }
   renderInteraction(node.interaction);
+  renderOptions(node.options ?? []);
   setBackground(node);
   renderTypewriter(node.text ?? '');
-  renderOptions(node.options ?? []);
 }
 
 async function boot() {
@@ -199,7 +215,6 @@ function clearTyping() {
 
 function shutdown() {
   clearTyping();
-  stopKenBurns();
 }
 
 window.StoryRenderer = {

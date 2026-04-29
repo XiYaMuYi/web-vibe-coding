@@ -1,16 +1,17 @@
 {
   "meta": {
     "title": "Surprise Vibe Coding",
-    "version": "0.1.0",
+    "version": "0.2.0",
     "startNode": "node_000"
   },
   "nodes": {
     "node_000": {
       "id": "node_000",
       "title": "序章 · 进入回声舱",
+      "layout": "fullscreen-cinematic",
       "text": "当你按下开始键，空间会先安静一秒。然后，故事将像呼吸一样慢慢展开。长按封面三秒，唤醒第一段记忆。",
       "background": {
-        "image": "https://cdn.example.com/story/bg-000.jpg",
+        "image": "./image/Gemini_Generated_Image_c62rq0c62rq0c62r.png",
         "overlay": "linear-gradient(180deg, rgba(0,0,0,0.15), rgba(0,0,0,0.72))"
       },
       "audio": {
@@ -21,19 +22,22 @@
       "options": [
         {
           "label": "启动长按仪式",
-          "to": "node_001"
+          "to": "node_001",
+          "setFlags": { "sanity": 98 }
         }
       ],
       "interaction": {
         "type": "hold",
         "targetMs": 1800,
         "successTo": "node_001",
-        "hint": "长按封面，唤醒第一段记忆"
+        "hint": "长按封面，唤醒第一段记忆",
+        "setFlags": { "sanity": 97 }
       }
     },
     "node_001": {
       "id": "node_001",
       "title": "分歧 · 第一束光",
+      "layout": "character-dialogue",
       "text": "你听见远处传来轻微的电流声。现在，必须选择是通过狂点打开门，还是拖拽校准坐标。",
       "background": {
         "image": "https://cdn.example.com/story/bg-001.jpg",
@@ -47,23 +51,33 @@
       "options": [
         {
           "label": "进入狂点挑战",
-          "to": "node_002"
+          "to": "node_002",
+          "requires": { "flag": "has_key", "value": true },
+          "setFlags": { "sanity": 94 }
         },
         {
           "label": "选择拖拽路径",
-          "to": "node_003"
+          "to": "node_003",
+          "setFlags": { "sanity": 93 }
+        },
+        {
+          "label": "拾取钥匙残片",
+          "to": "node_001",
+          "setFlags": { "has_key": true }
         }
       ],
       "interaction": {
         "type": "mash",
         "targetCount": 24,
         "successTo": "node_002",
-        "hint": "连续点击点亮线路"
+        "hint": "连续点击点亮线路",
+        "setFlags": { "sanity": 90 }
       }
     },
     "node_002": {
       "id": "node_002",
       "title": "狂点 · 门锁过载",
+      "layout": "terminal-override",
       "text": "你的指尖像雨点一样敲击面板，电路开始发热，门锁的指示灯疯狂闪烁。最后一道电弧被击穿了。",
       "background": {
         "image": "https://cdn.example.com/story/bg-002.jpg",
@@ -77,19 +91,22 @@
       "options": [
         {
           "label": "进入结局：星门开启",
-          "to": "node_004"
+          "to": "node_004",
+          "setFlags": { "sanity": 88 }
         }
       ],
       "interaction": {
         "type": "mash",
         "targetCount": 32,
         "successTo": "node_004",
-        "hint": "继续狂点，直到锁芯崩解"
+        "hint": "继续狂点，直到锁芯崩解",
+        "setFlags": { "sanity": 84 }
       }
     },
     "node_003": {
       "id": "node_003",
       "title": "拖拽 · 坐标校准",
+      "layout": "character-dialogue",
       "text": "你将视线对准悬浮罗盘，拖动那道光线，让它缓慢贴合中央轨迹。每一次微调，世界都在重新对焦。",
       "background": {
         "image": "https://cdn.example.com/story/bg-003.jpg",
@@ -103,19 +120,22 @@
       "options": [
         {
           "label": "进入结局：坐标归位",
-          "to": "node_004"
+          "to": "node_004",
+          "setFlags": { "sanity": 82 }
         }
       ],
       "interaction": {
         "type": "drag",
         "targetPercent": 85,
         "successTo": "node_004",
-        "hint": "滑动罗盘光标，贴近目标位置"
+        "hint": "滑动罗盘光标，贴近目标位置",
+        "setFlags": { "sanity": 80 }
       }
     },
     "node_004": {
       "id": "node_004",
       "title": "终章 · 专属纪念身份卡",
+      "layout": "fullscreen-cinematic",
       "text": "你已抵达终点。系统开始记录你的轮廓，并准备生成一张只属于你的身份卡。",
       "background": {
         "image": "https://cdn.example.com/story/bg-004.jpg",
@@ -136,7 +156,8 @@
         "type": "hold",
         "targetMs": 1200,
         "successTo": "node_004",
-        "hint": "长按召唤纪念卡生成器"
+        "hint": "长按召唤纪念卡生成器",
+        "setFlags": { "sanity": 75 }
       }
     }
   }

@@ -19,14 +19,18 @@ const CameraEgg = (() => {
     video.muted = true;
     video.classList.remove('hidden');
 
-    stream = await navigator.mediaDevices.getUserMedia({
-      video: { facingMode: 'user' },
-      audio: false,
-    });
-
-    video.srcObject = stream;
-    await video.play();
-    return video;
+    try {
+      stream = await navigator.mediaDevices.getUserMedia({
+        video: { facingMode: 'user' },
+        audio: false,
+      });
+      video.srcObject = stream;
+      await video.play();
+      return video;
+    } catch (error) {
+      if (video) video.classList.add('hidden');
+      throw new Error('摄像头权限被拒绝或不可用');
+    }
   }
 
   async function submitAvatar(base64Image) {

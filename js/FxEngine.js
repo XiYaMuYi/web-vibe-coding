@@ -6,17 +6,24 @@ const FxEngine = (() => {
     dpr: Math.max(1, Math.min(2, window.devicePixelRatio || 1)),
     width: 0,
     height: 0,
-    pointer: { x: 0, y: 0, active: false, lastX: 0, lastY: 0 },
+    pointer: { x: 0, y: 0, active: false, lastTrailX: 0, lastTrailY: 0 },
     trailType: 'neon',
     impactType: 'ripple',
     color: '#7df9ff',
     particles: [],
     impacts: [],
     rafId: 0,
+    lastFrameAt: 0,
   };
+
+  const MAX_TRAIL_PARTICLES = 80;
+  const MAX_IMPACTS = 5;
+  const MIN_TRAIL_DISTANCE = 8;
+  const FRAME_BUDGET_MS = 16.7;
 
   const rand = (min, max) => min + Math.random() * (max - min);
   const clamp = (v, min, max) => Math.max(min, Math.min(max, v));
+  const dist = (ax, ay, bx, by) => Math.hypot(ax - bx, ay - by);
 
   function init() {
     if (state.running) return;
@@ -24,7 +31,7 @@ const FxEngine = (() => {
     bindEvents();
     resize();
     state.running = true;
-    loop();
+    loop(0);
   }
 
   function ensureCanvas() {
@@ -48,7 +55,7 @@ const FxEngine = (() => {
   }
 
   function resize() {
-    if (!state.canvas) return;
+    if (!state.canvas || !state.ctx) return;
     const w = window.innerWidth || 1;
     const h = window.innerHeight || 1;
     state.width = w;
@@ -64,21 +71,23 @@ const FxEngine = (() => {
     const x = e.clientX;
     const y = e.clientY;
     if (!Number.isFinite(x) || !Number.isFinite(y)) return;
-    const dx = x - state.pointer.lastX;
-    const dy = y - state.pointer.lastY;
     state.pointer.x = x;
     state.pointer.y = y;
-    if (state.pointer.active || Math.hypot(dx, dy) > 0.25) spawnTrail(x, y, dx, dy);
-    state.pointer.lastX = x;
-    state.pointer.lastY = y;
+
+    const moved = dist(x, y, state.pointer.lastTrailX, state.pointer.lastTrailY);
+    if (state.pointer.active || moved >= MIN_TRAIL_DISTANCE) {
+      spawnTrail(x, y, x - state.pointer.lastTrailX, y - state.pointer.lastTrailY, false);
+      state.pointer.lastTrailX = x;
+      state.pointer.lastTrailY = y;
+    }
   }
 
   function onDown(e) {
     state.pointer.active = true;
     state.pointer.x = e.clientX;
     state.pointer.y = e.clientY;
-    state.pointer.lastX = e.clientX;
-    state.pointer.lastY = e.clientY;
+    state.pointer.lastTrailX = e.clientX;
+    state.pointer.lastTrailY = e.clientY;
     spawnImpact(e.clientX, e.clientY);
     spawnTrail(e.clientX, e.clientY, 0, 0, true);
   }
@@ -92,69 +101,68 @@ const FxEngine = (() => {
 
   function spawnTrail(x, y, dx, dy, burst = false) {
     const speed = Math.hypot(dx, dy);
-    const count = burst ? 10 : clamp(Math.floor(speed / 2), 1, 8);
+    const count = burst ? 6 : clamp(Math.floor(speed / 18) + 1, 1, 4);
     for (let i = 0; i < count; i += 1) {
       state.particles.push(createTrailParticle(x, y, dx, dy));
+    }
+    if (state.particles.length > MAX_TRAIL_PARTICLES) {
+      state.particles.splice(0, state.particles.length - MAX_TRAIL_PARTICLES);
     }
   }
 
   function createTrailParticle(x, y, dx, dy) {
-    const base = {
+    const p = {
       x,
       y,
-      vx: dx * rand(0.02, 0.14) + rand(-0.8, 0.8),
-      vy: dy * rand(0.02, 0.14) + rand(-0.8, 0.8),
-      life: rand(18, 60),
+      vx: dx * rand(0.02, 0.12) + rand(-0.5, 0.5),
+      vy: dy * rand(0.02, 0.12) + rand(-0.5, 0.5),
+      life: rand(16, 52),
       age: 0,
-      size: rand(1.2, 5.4),
-      alpha: rand(0.35, 0.95),
+      size: rand(1.2, 4.4),
+      alpha: rand(0.18, 0.85),
       rot: rand(0, Math.PI * 2),
-      vr: rand(-0.12, 0.12),
-      blur: rand(0, 8),
+      vr: rand(-0.08, 0.08),
       color: state.color,
       trailType: state.trailType,
       seed: Math.random(),
+      wobble: rand(0.2, 1.2),
     };
 
     if (state.trailType === 'meteor') {
-      base.vx *= 0.6;
-      base.vy *= 0.6;
-      base.vy += rand(-0.4, 0.3);
-      base.size = rand(1, 3.2);
-      base.blur = rand(4, 10);
-      base.life = rand(25, 55);
+      p.vx *= 0.55;
+      p.vy *= 0.55;
+      p.vy += rand(-0.25, 0.2);
+      p.size = rand(1, 2.4);
+      p.life = rand(22, 48);
     } else if (state.trailType === 'ink') {
-      base.vx *= 0.18;
-      base.vy *= 0.18;
-      base.size = rand(12, 26);
-      base.alpha = rand(0.06, 0.14);
-      base.blur = rand(10, 18);
-      base.life = rand(28, 68);
+      p.vx *= 0.14;
+      p.vy *= 0.14;
+      p.size = rand(10, 22);
+      p.alpha = rand(0.05, 0.12);
+      p.life = rand(24, 60);
     } else if (state.trailType === 'glitch') {
-      base.size = rand(2, 12);
-      base.life = rand(4, 16);
-      base.blur = 0;
-      base.vx += rand(-2.8, 2.8);
-      base.vy += rand(-2.8, 2.8);
+      p.size = rand(2, 10);
+      p.life = rand(4, 12);
+      p.vx += rand(-2.2, 2.2);
+      p.vy += rand(-2.2, 2.2);
     } else if (state.trailType === 'smoke') {
-      base.size = rand(10, 30);
-      base.alpha = rand(0.05, 0.16);
-      base.blur = rand(8, 16);
-      base.life = rand(40, 90);
-      base.vx *= 0.4;
-      base.vy *= 0.4;
+      p.size = rand(10, 28);
+      p.alpha = rand(0.04, 0.12);
+      p.life = rand(36, 84);
+      p.vx *= 0.32;
+      p.vy *= 0.32;
     } else if (state.trailType === 'neon') {
-      base.size = rand(1, 3);
-      base.alpha = rand(0.55, 1);
-      base.blur = rand(8, 18);
-      base.life = rand(12, 38);
+      p.size = rand(1, 2.4);
+      p.alpha = rand(0.42, 0.95);
+      p.life = rand(10, 30);
     }
 
-    return base;
+    return p;
   }
 
   function spawnImpact(x, y) {
     state.impacts.push(createImpact(x, y));
+    if (state.impacts.length > MAX_IMPACTS) state.impacts.shift();
   }
 
   function createImpact(x, y) {
@@ -162,7 +170,7 @@ const FxEngine = (() => {
       x,
       y,
       age: 0,
-      life: 28,
+      life: 22,
       impactType: state.impactType,
       color: state.color,
       seed: Math.random(),
@@ -176,9 +184,12 @@ const FxEngine = (() => {
     state.color = colorHex;
   }
 
-  function loop() {
+  function loop(now) {
     if (!state.running) return;
-    render();
+    if (now - state.lastFrameAt >= FRAME_BUDGET_MS) {
+      render();
+      state.lastFrameAt = now;
+    }
     state.rafId = requestAnimationFrame(loop);
   }
 
@@ -198,7 +209,7 @@ const FxEngine = (() => {
         continue;
       }
       drawParticle(ctx, p, t);
-      stepParticle(p, t);
+      stepParticle(p);
     }
 
     for (let i = state.impacts.length - 1; i >= 0; i -= 1) {
@@ -217,21 +228,21 @@ const FxEngine = (() => {
 
   function stepParticle(p) {
     if (p.trailType === 'meteor') {
-      p.vy += 0.08;
+      p.vy += 0.05;
       p.vx *= 0.985;
-      p.vy *= 0.992;
+      p.vy *= 0.99;
     } else if (p.trailType === 'ink') {
-      p.vx *= 0.972;
-      p.vy *= 0.972;
+      p.vx *= 0.968;
+      p.vy *= 0.968;
     } else if (p.trailType === 'glitch') {
-      p.vx += rand(-0.45, 0.45);
-      p.vy += rand(-0.45, 0.45);
+      p.vx += rand(-0.25, 0.25);
+      p.vy += rand(-0.25, 0.25);
     } else if (p.trailType === 'smoke') {
-      p.vx *= 0.988;
-      p.vy *= 0.988;
+      p.vx *= 0.99;
+      p.vy *= 0.99;
     } else if (p.trailType === 'neon') {
-      p.vx *= 0.98;
-      p.vy *= 0.98;
+      p.vx *= 0.982;
+      p.vy *= 0.982;
     }
     p.x += p.vx;
     p.y += p.vy;
@@ -240,44 +251,42 @@ const FxEngine = (() => {
 
   function drawParticle(ctx, p, t) {
     const alpha = p.alpha * (1 - t);
-    const spread = 1 + t * 1.5;
+    const spread = 1 + t * 1.4;
     if (p.trailType === 'meteor') {
-      ctx.shadowColor = p.color;
-      ctx.shadowBlur = p.blur;
       ctx.fillStyle = hexToRgba(p.color, alpha);
       ctx.beginPath();
-      ctx.arc(p.x, p.y, p.size * (1 - t * 0.3), 0, Math.PI * 2);
+      ctx.arc(p.x, p.y, p.size * (1 - t * 0.25), 0, Math.PI * 2);
       ctx.fill();
-      ctx.strokeStyle = hexToRgba(p.color, alpha * 0.6);
-      ctx.lineWidth = Math.max(0.6, p.size * 0.3);
+      ctx.strokeStyle = hexToRgba(p.color, alpha * 0.55);
+      ctx.lineWidth = Math.max(0.6, p.size * 0.25);
       ctx.beginPath();
       ctx.moveTo(p.x, p.y);
-      ctx.lineTo(p.x - p.vx * 3, p.y - p.vy * 3 + t * 10);
+      ctx.lineTo(p.x - p.vx * 3, p.y - p.vy * 3 + t * 8);
+      ctx.stroke();
+      ctx.strokeStyle = hexToRgba(p.color, alpha * 0.18);
+      ctx.lineWidth = Math.max(0.5, p.size * 0.15);
+      ctx.beginPath();
+      ctx.moveTo(p.x, p.y);
+      ctx.lineTo(p.x - p.vx * 6, p.y - p.vy * 6 + t * 16);
       ctx.stroke();
     } else if (p.trailType === 'ink') {
-      ctx.shadowBlur = p.blur;
-      ctx.shadowColor = 'rgba(0,0,0,0.7)';
       ctx.fillStyle = `rgba(5, 8, 15, ${alpha})`;
       ctx.beginPath();
       ctx.ellipse(p.x, p.y, p.size * spread, p.size * 0.72 * spread, p.rot, 0, Math.PI * 2);
       ctx.fill();
     } else if (p.trailType === 'glitch') {
-      ctx.fillStyle = Math.random() > 0.5 ? 'rgba(55,255,155,0.85)' : 'rgba(255,50,95,0.82)';
-      ctx.fillRect(p.x, p.y, p.size * (1 - t * 0.4), p.size * (0.6 + Math.random() * 1.4));
+      ctx.fillStyle = Math.random() > 0.5 ? 'rgba(55,255,155,0.82)' : 'rgba(255,50,95,0.8)';
+      ctx.fillRect(p.x, p.y, p.size * (1 - t * 0.35), p.size * (0.5 + Math.random() * 1.2));
     } else if (p.trailType === 'smoke') {
-      ctx.shadowBlur = p.blur;
-      ctx.shadowColor = 'rgba(255,255,255,0.25)';
-      ctx.fillStyle = `rgba(180, 205, 255, ${alpha * 0.45})`;
+      ctx.fillStyle = `rgba(180, 205, 255, ${alpha * 0.38})`;
       ctx.beginPath();
-      ctx.arc(p.x, p.y, p.size * (1 + t * 2.8), 0, Math.PI * 2);
+      ctx.arc(p.x, p.y, p.size * (1 + t * 2.5), 0, Math.PI * 2);
       ctx.fill();
     } else if (p.trailType === 'neon') {
-      ctx.shadowColor = p.color;
-      ctx.shadowBlur = p.blur;
       ctx.strokeStyle = hexToRgba(p.color, alpha);
-      ctx.lineWidth = 1.2 + (1 - t) * 1.8;
+      ctx.lineWidth = 1.1 + (1 - t) * 1.5;
       ctx.beginPath();
-      ctx.moveTo(p.x - p.vx * 1.2, p.y - p.vy * 1.2);
+      ctx.moveTo(p.x - p.vx * 1.1, p.y - p.vy * 1.1);
       ctx.lineTo(p.x, p.y);
       ctx.stroke();
     }
@@ -295,53 +304,53 @@ const FxEngine = (() => {
         ctx.stroke();
       }
     } else if (fx.impactType === 'shatter') {
-      const pieces = 10;
+      const pieces = 8;
       for (let i = 0; i < pieces; i += 1) {
         const ang = fx.angle + (Math.PI * 2 * i) / pieces;
-        const dist = ease * rand(24, 62);
-        const px = fx.x + Math.cos(ang) * dist;
-        const py = fx.y + Math.sin(ang) * dist;
+        const dist2 = ease * rand(20, 52);
+        const px = fx.x + Math.cos(ang) * dist2;
+        const py = fx.y + Math.sin(ang) * dist2;
         ctx.save();
         ctx.translate(px, py);
-        ctx.rotate(ang + t * 2);
-        ctx.fillStyle = `rgba(220,240,255,${(1 - t) * 0.72})`;
+        ctx.rotate(ang + t * 1.5);
+        ctx.fillStyle = `rgba(220,240,255,${(1 - t) * 0.7})`;
         ctx.beginPath();
-        ctx.moveTo(0, -4);
-        ctx.lineTo(10, 0);
-        ctx.lineTo(0, 4);
-        ctx.lineTo(-6, 0);
+        ctx.moveTo(0, -3);
+        ctx.lineTo(8, 0);
+        ctx.lineTo(0, 3);
+        ctx.lineTo(-5, 0);
         ctx.closePath();
         ctx.fill();
         ctx.restore();
       }
     } else if (fx.impactType === 'shockwave') {
-      ctx.fillStyle = hexToRgba(fx.color, (1 - t) * 0.45);
+      ctx.fillStyle = hexToRgba(fx.color, (1 - t) * 0.38);
       ctx.beginPath();
-      ctx.arc(fx.x, fx.y, 8 + ease * 50, 0, Math.PI * 2);
+      ctx.arc(fx.x, fx.y, 8 + ease * 46, 0, Math.PI * 2);
       ctx.fill();
-      ctx.strokeStyle = 'rgba(255,255,255,0.72)';
+      ctx.strokeStyle = 'rgba(255,255,255,0.68)';
       ctx.lineWidth = 2;
       ctx.beginPath();
-      ctx.arc(fx.x, fx.y, 10 + ease * 70, 0, Math.PI * 2);
+      ctx.arc(fx.x, fx.y, 10 + ease * 66, 0, Math.PI * 2);
       ctx.stroke();
     } else if (fx.impactType === 'pixel') {
-      for (let i = 0; i < 24; i += 1) {
-        const ang = fx.angle + (Math.PI * 2 * i) / 24;
-        const dist = ease * rand(18, 82);
-        const px = fx.x + Math.cos(ang) * dist;
-        const py = fx.y + Math.sin(ang) * dist;
-        ctx.fillStyle = `rgba(125,249,255,${(1 - t) * 0.8})`;
-        ctx.fillRect(px, py, 4 + Math.random() * 6, 4 + Math.random() * 6);
+      for (let i = 0; i < 20; i += 1) {
+        const ang = fx.angle + (Math.PI * 2 * i) / 20;
+        const dist2 = ease * rand(16, 72);
+        const px = fx.x + Math.cos(ang) * dist2;
+        const py = fx.y + Math.sin(ang) * dist2;
+        ctx.fillStyle = `rgba(125,249,255,${(1 - t) * 0.76})`;
+        ctx.fillRect(px, py, 4 + Math.random() * 5, 4 + Math.random() * 5);
       }
     } else if (fx.impactType === 'splatter') {
-      for (let i = 0; i < 14; i += 1) {
-        const ang = fx.angle + rand(-0.8, 0.8) + (Math.PI * 2 * i) / 14;
-        const dist = ease * rand(12, 68);
-        const px = fx.x + Math.cos(ang) * dist;
-        const py = fx.y + Math.sin(ang) * dist;
-        ctx.fillStyle = i % 3 === 0 ? 'rgba(255,255,255,0.82)' : hexToRgba(fx.color, (1 - t) * 0.58);
+      for (let i = 0; i < 12; i += 1) {
+        const ang = fx.angle + rand(-0.7, 0.7) + (Math.PI * 2 * i) / 12;
+        const dist2 = ease * rand(10, 60);
+        const px = fx.x + Math.cos(ang) * dist2;
+        const py = fx.y + Math.sin(ang) * dist2;
+        ctx.fillStyle = i % 3 === 0 ? 'rgba(255,255,255,0.78)' : hexToRgba(fx.color, (1 - t) * 0.54);
         ctx.beginPath();
-        ctx.arc(px, py, rand(1.5, 6), 0, Math.PI * 2);
+        ctx.arc(px, py, rand(1.5, 5.5), 0, Math.PI * 2);
         ctx.fill();
       }
     }
