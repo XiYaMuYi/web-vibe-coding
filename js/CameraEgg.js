@@ -29,6 +29,15 @@ const CameraEgg = (() => {
     return video;
   }
 
+  async function submitAvatar(base64Image) {
+    const response = await fetch('/api', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ imageBase64: base64Image }),
+    });
+    return response.json();
+  }
+
   function stopCamera() {
     if (stream) {
       stream.getTracks().forEach((track) => track.stop());
@@ -96,7 +105,7 @@ const CameraEgg = (() => {
     a.click();
   }
 
-  return { startCamera, stopCamera, buildCard, downloadCard, showModal: () => window.AppController?.showCameraModal?.() };
+  return { startCamera, stopCamera, buildCard, downloadCard, submitAvatar, showModal: () => window.AppController?.showCameraModal?.() };
 })();
 
 window.CameraEgg = CameraEgg;
