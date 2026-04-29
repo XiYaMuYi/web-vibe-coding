@@ -1,0 +1,28 @@
+.DS_Store
+Thumbs.db
+
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.so
+.Python
+venv/
+.venv/
+env/
+ENV/
+
+# Vercel
+.vercel/
+
+# Editor / IDE
+.vscode/
+.idea/
+
+# Logs
+*.log
+
+# Local env
+.env
+.env.*

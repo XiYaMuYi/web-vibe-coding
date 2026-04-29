@@ -1,0 +1,368 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <meta name="theme-color" content="#050816" />
+    <title>Surprise Vibe Coding</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <style>
+      :root {
+        color-scheme: dark;
+        --panel-bg: rgba(8, 12, 24, 0.54);
+        --panel-border: rgba(255, 255, 255, 0.1);
+        --scanline: rgba(255,255,255,0.035);
+      }
+      html, body {
+        width: 100%;
+        min-height: 100%;
+        margin: 0;
+        background:
+          radial-gradient(circle at top, rgba(72, 113, 247, 0.18), transparent 35%),
+          linear-gradient(180deg, #02040b 0%, #050816 50%, #02040b 100%);
+        overflow-x: hidden;
+        -webkit-font-smoothing: antialiased;
+        text-rendering: optimizeLegibility;
+      }
+      body { min-height: 100vh; }
+      .shell { min-height: 100vh; display: flex; justify-content: center; align-items: stretch; padding: 0; }
+      .app-frame {
+        width: 100%;
+        min-height: 100vh;
+        position: relative;
+        overflow: hidden;
+      }
+      @media (min-width: 768px) {
+        .shell { padding: 24px; backdrop-filter: blur(18px); }
+        .app-frame {
+          max-width: 480px;
+          min-height: calc(100vh - 48px);
+          margin: 0 auto;
+          border: 1px solid var(--panel-border);
+          border-radius: 28px;
+          box-shadow: 0 18px 60px rgba(0, 0, 0, 0.45);
+          background: rgba(4, 8, 18, 0.55);
+          backdrop-filter: blur(20px);
+        }
+      }
+      .bg-layer {
+        position: absolute;
+        inset: 0;
+        background-position: center;
+        background-size: cover;
+        background-repeat: no-repeat;
+        transform: scale(1.04);
+        transition: opacity 1.25s ease, transform 1.25s ease;
+        will-change: opacity, transform;
+      }
+      .bg-layer.is-active { opacity: 1; transform: scale(1); animation: kenBurnsPan 24s ease-in-out infinite alternate; }
+      .bg-layer.is-idle { opacity: 0; transform: scale(1.07); }
+      .glass-panel {
+        background: var(--panel-bg);
+        border: 1px solid var(--panel-border);
+        box-shadow: 0 8px 30px rgba(0, 0, 0, 0.28);
+        backdrop-filter: blur(12px);
+      }
+      .type-cursor::after {
+        content: '';
+        display: inline-block;
+        width: 0.6em;
+        height: 1em;
+        margin-left: 2px;
+        background: rgba(255,255,255,0.88);
+        vertical-align: -0.12em;
+        animation: blink 1s steps(1) infinite;
+      }
+      @keyframes blink { 50% { opacity: 0; } }
+      .btn-soft { transition: transform 160ms ease, opacity 160ms ease, background 160ms ease, border-color 160ms ease, box-shadow 160ms ease; }
+      .story-viewport {
+        min-height: 100vh;
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+      }
+      .story-card {
+        display: flex;
+        flex-direction: column;
+        min-height: 70vh;
+        justify-content: flex-end;
+        transition: opacity 360ms ease, transform 360ms ease, filter 360ms ease;
+      }
+      .stage-fade {
+        opacity: 0;
+        transform: translateY(16px);
+        filter: blur(6px);
+      }
+      .story-hero {
+        min-height: 70vh;
+        position: relative;
+      }
+      .story-hero::after {
+        content: '';
+        position: absolute;
+        inset: 0;
+        background:
+          linear-gradient(180deg, rgba(2,6,23,0) 0%, rgba(2,6,23,0.15) 55%, rgba(2,6,23,0.72) 100%),
+          linear-gradient(90deg, rgba(255,255,255,0.02) 0, transparent 1px),
+          linear-gradient(0deg, rgba(255,255,255,0.02) 0, transparent 1px);
+        background-size: auto, 18px 18px, 18px 18px;
+        mix-blend-mode: screen;
+        opacity: 0.4;
+        pointer-events: none;
+      }
+      .story-hero img {
+        position: absolute;
+        inset: 0;
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        transform: scale(1.03);
+        transition: opacity 420ms ease, transform 24s ease-in-out;
+      }
+      .options-dock {
+        position: sticky;
+        bottom: calc(18px + env(safe-area-inset-bottom));
+        margin-top: 14px;
+      }
+      .hidden-eggs { position: absolute; inset: 0; pointer-events: auto; }
+      .app-glitch { position: relative; }
+      .app-glitch::before,
+      .app-glitch::after {
+        content: '';
+        position: absolute;
+        inset: 0;
+        pointer-events: none;
+        opacity: 0;
+        mix-blend-mode: screen;
+      }
+      .app-glitch.glitching::before {
+        opacity: 1;
+        background: linear-gradient(90deg, rgba(255,0,80,0.22), rgba(0,255,255,0.14), rgba(0,0,0,0));
+        transform: translateX(3px) skewX(-4deg);
+        animation: glitchPulse 220ms linear;
+      }
+      .app-glitch.glitching::after {
+        opacity: 1;
+        background: linear-gradient(90deg, rgba(0,255,255,0.18), rgba(255,0,120,0.12), rgba(0,0,0,0));
+        transform: translateX(-3px) skewX(3deg);
+        animation: glitchPulse 220ms linear;
+      }
+      .app-glitch.color-split {
+        filter: saturate(1.35) contrast(1.18) hue-rotate(-5deg);
+      }
+      .app-glitch.color-split .bg-layer,
+      .app-glitch.color-split .glass-panel,
+      .app-glitch.color-split #stage {
+        animation: rgbShift 220ms ease-out;
+      }
+      .screen-flash::before {
+        content: '';
+        position: fixed;
+        inset: 0;
+        background: rgba(255,255,255,0.98);
+        pointer-events: none;
+        z-index: 100;
+        animation: flashFade 200ms ease-out forwards;
+      }
+      .system-override .story-viewport,
+      .system-override footer,
+      .system-override header > div,
+      .system-override #storyText,
+      .system-override #optionList,
+      .system-override #interactionBadge,
+      .system-override #storyTitle {
+        opacity: 0 !important;
+        transform: translateY(18px) scale(0.985);
+        transition: opacity 420ms ease, transform 420ms ease;
+        pointer-events: none;
+      }
+      .system-override #cameraModal {
+        opacity: 0;
+        transition: opacity 320ms ease;
+      }
+      .system-override #cameraModal.hidden {
+        opacity: 1;
+      }
+      .system-override .bg-layer {
+        opacity: 0.12 !important;
+        filter: saturate(1.2) blur(1px) contrast(1.08);
+      }
+      .system-override .story-hero::after {
+        opacity: 0.08;
+      }
+      .screen-flash .system-override .story-viewport {
+        opacity: 0 !important;
+      }
+      @keyframes flashFade {
+        0% { opacity: 1; }
+        100% { opacity: 0; }
+      }
+      @keyframes glitchPulse {
+        0% { opacity: 0; }
+        20% { opacity: 1; }
+        100% { opacity: 0; }
+      }
+      @keyframes rgbShift {
+        0% { transform: translate3d(0, 0, 0); }
+        25% { transform: translate3d(1px, 0, 0); }
+        50% { transform: translate3d(-1px, 0, 0); }
+        100% { transform: translate3d(0, 0, 0); }
+      }
+      @keyframes kenBurnsPan {
+        0% { transform: translate3d(0,0,0) scale(1); }
+        100% { transform: translate3d(12px,-8px,0) scale(1.05); }
+      }
+      @keyframes hudPulse { 0%,100% { opacity: .55; } 50% { opacity: 1; } }
+      .hud-badge {
+        position: relative;
+        overflow: hidden;
+        font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+        letter-spacing: 0.22em;
+        font-size: 10px;
+        text-transform: uppercase;
+        color: rgba(125,249,255,0.88);
+        border: 1px solid rgba(125,249,255,0.18);
+        background: rgba(8, 18, 30, 0.52);
+        backdrop-filter: blur(14px);
+        animation: hudPulse 2.4s ease-in-out infinite;
+      }
+      .hud-badge::before {
+        content: '';
+        position: absolute;
+        inset: 0;
+        background: linear-gradient(90deg, transparent, rgba(125,249,255,0.12), transparent);
+        transform: translateX(-100%);
+        animation: scanlineMove 2.8s linear infinite;
+      }
+      @keyframes scanlineMove {
+        to { transform: translateX(100%); }
+      }
+      .noise-grid {
+        position: relative;
+      }
+      .noise-grid::before {
+        content: '';
+        position: absolute;
+        inset: 0;
+        background-image:
+          linear-gradient(rgba(255,255,255,0.035) 1px, transparent 1px),
+          linear-gradient(90deg, rgba(255,255,255,0.035) 1px, transparent 1px),
+          radial-gradient(circle, rgba(255,255,255,0.08) 1px, transparent 1px);
+        background-size: 18px 18px, 18px 18px, 4px 4px;
+        opacity: 0.18;
+        mix-blend-mode: soft-light;
+        pointer-events: none;
+      }
+      .noise-grid::after {
+        content: '';
+        position: absolute;
+        inset: 0;
+        background-image: radial-gradient(circle, rgba(255,255,255,0.22) 0.5px, transparent 0.6px);
+        background-size: 3px 3px;
+        opacity: 0.06;
+        pointer-events: none;
+        mix-blend-mode: overlay;
+      }
+      #fxLayer {
+        position: fixed;
+        inset: 0;
+        z-index: 9999;
+        pointer-events: none;
+        touch-action: none;
+        mix-blend-mode: screen;
+      }
+    </style>
+  </head>
+  <body>
+    <main class="shell">
+      <section class="app-frame app-glitch noise-grid" id="app">
+        <div id="appError" class="hidden absolute inset-0 z-40 flex items-center justify-center px-8 text-center text-base leading-8 text-white/80 bg-black/70 backdrop-blur-md"></div>
+        <div class="bg-layer is-active" id="bgLayerA"></div>
+        <div class="bg-layer is-idle" id="bgLayerB"></div>
+
+        <div id="hiddenEggZone" class="hidden-eggs"></div>
+
+        <div class="relative z-10 flex min-h-screen flex-col justify-between p-4 sm:p-5 story-viewport" id="stage">
+          <header class="pt-2">
+            <div class="flex items-center justify-between text-xs tracking-[0.28em] text-white/60 uppercase">
+              <span>Vibe Coding</span>
+              <span id="nodeId">node_000</span>
+            </div>
+          </header>
+
+          <section class="story-card flex-1 flex items-end pb-4">
+            <div class="glass-panel w-full rounded-[24px] p-4 sm:p-5">
+              <div class="mb-3 flex items-center justify-between gap-3">
+                <div class="flex-1">
+                  <h1 id="storyTitle" class="text-lg font-semibold text-white">故事标题</h1>
+                </div>
+                <div id="interactionBadge" class="hidden hud-badge rounded-full px-3 py-1"></div>
+              </div>
+
+              <div class="relative overflow-hidden rounded-2xl border border-white/8 bg-black/20 story-hero">
+                <img id="storyImage" alt="story visual" class="h-full w-full object-cover" />
+                <div class="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/78 via-black/24 to-transparent"></div>
+              </div>
+
+              <div class="mt-4 space-y-3">
+                <p id="storyText" class="min-h-[5.5rem] text-[15px] leading-relaxed tracking-wide text-white/80 type-cursor"></p>
+                <div id="optionList" class="grid gap-3 options-dock"></div>
+              </div>
+            </div>
+          </section>
+
+          <div id="cameraModal" class="hidden fixed inset-0 z-50">
+            <div class="absolute inset-0 bg-black/70 backdrop-blur-md"></div>
+            <div class="relative mx-auto flex min-h-full max-w-[480px] items-end px-4 py-4 sm:items-center">
+              <div class="glass-panel w-full rounded-[28px] border border-cyan-300/20 bg-[#060913]/90 p-4 shadow-[0_0_40px_rgba(34,211,238,0.12)]">
+                <div class="mb-4 flex items-center justify-between">
+                  <div>
+                    <p class="text-[11px] uppercase tracking-[0.32em] text-cyan-200/70">Camera Egg</p>
+                    <h2 class="mt-1 text-lg font-semibold text-white">专属身份卡生成器</h2>
+                  </div>
+                  <button id="cameraCloseBtn" class="rounded-full border border-white/10 bg-white/5 px-3 py-1 text-xs text-white/70">关闭</button>
+                </div>
+
+                <div class="space-y-4">
+                  <div class="overflow-hidden rounded-[24px] border border-cyan-300/20 bg-black/40">
+                    <video id="cameraPreview" class="h-64 w-full object-cover" autoplay muted playsinline></video>
+                    <img id="cameraCardPreview" alt="identity card preview" class="hidden h-64 w-full object-cover" />
+                  </div>
+
+                  <div id="cameraStatus" class="rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-sm leading-6 text-white/80">
+                    准备连接您的光学传感器。
+                  </div>
+
+                  <div class="grid grid-cols-2 gap-3">
+                    <button id="cameraGenerateBtn" class="btn-soft rounded-2xl border border-cyan-400/30 bg-cyan-400/15 px-4 py-3 text-sm font-medium text-cyan-50">生成身份卡</button>
+                    <button id="downloadCardBtn" class="hidden btn-soft rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-sm font-medium text-white">下载卡片</button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <footer class="pb-[env(safe-area-inset-bottom)] text-center text-[11px] tracking-[0.24em] text-white/35 uppercase">
+            Drag • Hold • Mash • Story Engine
+          </footer>
+        </div>
+      </section>
+    </main>
+
+    <script src="./js/Renderer.js"></script>
+    <script src="./js/Interaction.js"></script>
+    <script src="./js/FxEngine.js"></script>
+    <script src="./js/MediaManager.js"></script>
+    <script src="./js/CameraEgg.js"></script>
+    <script src="./js/app.js"></script>
+    <script>
+      window.addEventListener('DOMContentLoaded', () => {
+        window.AppController?.boot?.().catch((error) => {
+          console.error(error);
+        });
+      });
+    </script>
+  </body>
+</html>

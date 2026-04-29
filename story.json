@@ -1,0 +1,143 @@
+{
+  "meta": {
+    "title": "Surprise Vibe Coding",
+    "version": "0.1.0",
+    "startNode": "node_000"
+  },
+  "nodes": {
+    "node_000": {
+      "id": "node_000",
+      "title": "序章 · 进入回声舱",
+      "text": "当你按下开始键，空间会先安静一秒。然后，故事将像呼吸一样慢慢展开。长按封面三秒，唤醒第一段记忆。",
+      "background": {
+        "image": "https://cdn.example.com/story/bg-000.jpg",
+        "overlay": "linear-gradient(180deg, rgba(0,0,0,0.15), rgba(0,0,0,0.72))"
+      },
+      "audio": {
+        "bgm": "https://cdn.example.com/audio/bgm-000.mp3",
+        "loop": true,
+        "autoplay": false
+      },
+      "options": [
+        {
+          "label": "启动长按仪式",
+          "to": "node_001"
+        }
+      ],
+      "interaction": {
+        "type": "hold",
+        "targetMs": 1800,
+        "successTo": "node_001",
+        "hint": "长按封面，唤醒第一段记忆"
+      }
+    },
+    "node_001": {
+      "id": "node_001",
+      "title": "分歧 · 第一束光",
+      "text": "你听见远处传来轻微的电流声。现在，必须选择是通过狂点打开门，还是拖拽校准坐标。",
+      "background": {
+        "image": "https://cdn.example.com/story/bg-001.jpg",
+        "overlay": "linear-gradient(180deg, rgba(2,6,23,0.18), rgba(2,6,23,0.82))"
+      },
+      "audio": {
+        "bgm": "https://cdn.example.com/audio/bgm-001.mp3",
+        "loop": true,
+        "autoplay": false
+      },
+      "options": [
+        {
+          "label": "进入狂点挑战",
+          "to": "node_002"
+        },
+        {
+          "label": "选择拖拽路径",
+          "to": "node_003"
+        }
+      ],
+      "interaction": {
+        "type": "mash",
+        "targetCount": 24,
+        "successTo": "node_002",
+        "hint": "连续点击点亮线路"
+      }
+    },
+    "node_002": {
+      "id": "node_002",
+      "title": "狂点 · 门锁过载",
+      "text": "你的指尖像雨点一样敲击面板，电路开始发热，门锁的指示灯疯狂闪烁。最后一道电弧被击穿了。",
+      "background": {
+        "image": "https://cdn.example.com/story/bg-002.jpg",
+        "overlay": "linear-gradient(180deg, rgba(15,23,42,0.12), rgba(15,23,42,0.82))"
+      },
+      "audio": {
+        "bgm": "https://cdn.example.com/audio/bgm-002.mp3",
+        "loop": true,
+        "autoplay": false
+      },
+      "options": [
+        {
+          "label": "进入结局：星门开启",
+          "to": "node_004"
+        }
+      ],
+      "interaction": {
+        "type": "mash",
+        "targetCount": 32,
+        "successTo": "node_004",
+        "hint": "继续狂点，直到锁芯崩解"
+      }
+    },
+    "node_003": {
+      "id": "node_003",
+      "title": "拖拽 · 坐标校准",
+      "text": "你将视线对准悬浮罗盘，拖动那道光线，让它缓慢贴合中央轨迹。每一次微调，世界都在重新对焦。",
+      "background": {
+        "image": "https://cdn.example.com/story/bg-003.jpg",
+        "overlay": "linear-gradient(180deg, rgba(2,8,23,0.10), rgba(2,8,23,0.86))"
+      },
+      "audio": {
+        "bgm": "https://cdn.example.com/audio/bgm-003.mp3",
+        "loop": true,
+        "autoplay": false
+      },
+      "options": [
+        {
+          "label": "进入结局：坐标归位",
+          "to": "node_004"
+        }
+      ],
+      "interaction": {
+        "type": "drag",
+        "targetPercent": 85,
+        "successTo": "node_004",
+        "hint": "滑动罗盘光标，贴近目标位置"
+      }
+    },
+    "node_004": {
+      "id": "node_004",
+      "title": "终章 · 专属纪念身份卡",
+      "text": "你已抵达终点。系统开始记录你的轮廓，并准备生成一张只属于你的身份卡。",
+      "background": {
+        "image": "https://cdn.example.com/story/bg-004.jpg",
+        "overlay": "linear-gradient(180deg, rgba(8,12,24,0.08), rgba(8,12,24,0.90))"
+      },
+      "audio": {
+        "bgm": "https://cdn.example.com/audio/bgm-004.mp3",
+        "loop": true,
+        "autoplay": false
+      },
+      "options": [
+        {
+          "label": "进入系统接管",
+          "to": "node_004"
+        }
+      ],
+      "interaction": {
+        "type": "hold",
+        "targetMs": 1200,
+        "successTo": "node_004",
+        "hint": "长按召唤纪念卡生成器"
+      }
+    }
+  }
+}
