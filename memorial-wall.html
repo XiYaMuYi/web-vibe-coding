@@ -1028,8 +1028,19 @@
       purchaseBackdrop.addEventListener('click', closePurchaseModal);
       purchaseCancelBtn.addEventListener('click', closePurchaseModal);
       purchaseConfirmBtn.addEventListener('click', () => {
-        const { item, downloadUrl } = pendingPurchase;
+        const { id, item, downloadUrl } = pendingPurchase;
         if (!item || !downloadUrl) return;
+        // Now actually purchase
+        const result = window.CommodityService?.purchaseItem?.(id);
+        if (!result?.ok) {
+          closePurchaseModal();
+          hintEl.textContent = '购买失败，该灵魂已被他人收藏';
+          hintEl.classList.remove('is-hidden');
+          renderMarket();
+          return;
+        }
+        purchasedItem = item;
+        syncBalance(); renderMarket(); triggerDustEffect(); spawnStarRain(8);
         closePurchaseModal();
         const displayName = item.name || item.title || item.id;
         const link = document.createElement('a'); link.href = downloadUrl; link.download = `${displayName}.jpg`; link.rel = 'noopener';
@@ -1039,11 +1050,9 @@
       commodityGridEl?.addEventListener('click', (event) => {
         const button = event.target.closest('[data-buy-id]'); if (!button) return;
         const id = button.dataset.buyId;
-        const result = window.CommodityService?.purchaseItem?.(id);
-        const item = result?.item || window.CommodityService?.getCatalog?.().find((entry) => entry.id === id) || galleryItems.find((entry) => entry.id === id);
-        if (!result?.ok || !item) return;
-        purchasedItem = item;
-        syncBalance(); renderMarket(); triggerDustEffect(); spawnStarRain(8);
+        const catalog = window.CommodityService?.getCatalog?.() || [];
+        const item = catalog.find((entry) => entry.id === id) || galleryItems.find((entry) => entry.id === id);
+        if (!item) return;
         openPurchaseModal(item);
       });
       checkoutBtn.addEventListener('click', async () => {
