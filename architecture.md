@@ -1,317 +1,370 @@
-# Surprise Vibe Coding Architecture
+# ARCHITECTURE.md
 
-## 1. 项目定位
-
-这是一个**移动端优先、原生技术栈、由 JSON 驱动的互动叙事 Web 应用**。
-
-当前实现遵循“极限开发比赛”原则，优先交付**可控、稳定、易维护的最小闭环**，而不是一次性堆叠所有内容与特效。
-
-### 当前原则
-- 不使用 React / Vue / 复杂状态库
-- 所有剧情由 `story.json` 驱动
-- 所有交互由单一状态机控制
-- 所有视觉表现围绕手机屏幕展开
-- 所有高风险功能都做了降级和占位
+> 本文档基于当前代码库的真实状态编写，用于给后续接手的 Agent 提供准确上下文。它优先描述“现在实际是什么”，而不是“原本计划是什么”。如发现实现与理想设计不一致，会以 `[TODO/Debt]` 标注。
 
 ---
 
-## 2. 当前版本与整体蓝图的关系
+## 1. 真实架构拓扑梳理
 
-你说得对：**现在仓库里只是完成了架构蓝图中的一小部分核心骨架**。
+当前代码库已经从单一的剧情交互引擎，演化成两条物理隔离的产品轨道：
 
-### 已完成的核心骨架
-- `index.html`：页面骨架、移动端布局、主容器、彩蛋 Modal
-- `story.json`：最小可运行状态机样例
-- `Renderer.js`：JSON 渲染、打字机、背景切换、图片兜底
-- `Interaction.js`：mash / hold / drag 物理交互
-- `MediaManager.js`：音频解锁、BGM 切换
-- `CameraEgg.js`：摄像头采集 + 原生 canvas 出卡
-- `api/avatar.py`：Serverless 占位接口
-- `app.js`：主调度器与节点跳转
+1. **剧情轨**：`index.html` / `app.js` / `Navigator.js` / `Renderer.js` / `story.json`
+2. **全栈 3D 轨**：`memorial-wall.html`（入口） + `wall-test.html`（沉浸页） / `js/MemorialWall.js` / 后端 `/api/wall` / 数据库与对象存储
 
-### 仍然处于占位或半占位的部分
-- 剧情内容本身只有测试链路，没有完整章节内容
-- 摄像头彩蛋的商汤 AIGC 实际接口尚未接通
-- 视觉素材仍使用占位 URL
-- 音频资源仍使用占位 URL
-- `api/avatar.py` 目前是“打通链路”的模拟实现，不是正式生产版
-- 事件体验、文案节奏、转场细节还需继续打磨
-
----
-
-## 3. 目录结构
+### 1.1 剧情轨的数据流
 
 ```text
-web-vibe-coding/
-├─ index.html                    # 主入口，移动端优先 UI 骨架
-├─ architecture.md               # 架构说明文档
-├─ story.json                    # JSON 状态机驱动的剧情配置
-├─ api/
-│  └─ avatar.py                  # Vercel Serverless Python 接口，占位中转
-├─ js/
-│  ├─ app.js                     # 全局调度器：启动、跳转、彩蛋、事件绑定
-│  ├─ Renderer.js                # JSON 渲染器：文字、图片、节点、兜底
-│  ├─ Interaction.js             # mash / hold / drag 物理交互
-│  ├─ MediaManager.js            # 音频解锁、淡入淡出、预加载
-│  └─ CameraEgg.js               # 摄像头采集、canvas 合成、Base64 导出
-├─ assets/
-│  ├─ img/                       # 本地图片占位目录
-│  ├─ audio/                     # 本地音频占位目录
-│  ├─ fonts/                     # 可选字体资源
-│  └─ misc/                      # 其他资源
-└─ docs/
-   ├─ content-plan.md            # 后续剧情与节点规划
-   ├─ api-notes.md               # 后端接口与鉴权说明
-   └─ deployment.md              # 部署与上线检查清单
+index.html
+  └─ 只负责页面壳、资源引入、首屏挂载
+        ↓
+js/app.js
+  ├─ 初始化 DeviceManager / FxEngine / StoryRenderer / Navigator / Debugger
+  ├─ 绑定隐藏彩蛋、摄像头弹窗、调试按钮
+  └─ 不直接拥有剧情真相源
+        ↓
+js/Navigator.js
+  ├─ 负责剧情跳转、历史栈、flags、条件判断、回退
+  ├─ 接收 Renderer / Interaction 的回调
+  └─ 是剧情状态中枢
+        ↓
+js/Renderer.js
+  ├─ 读取 story.json
+  ├─ 渲染标题、正文、背景、选项按钮、布局 class
+  └─ 只负责把状态表现到 DOM
+        ↓
+story.json
+  └─ 剧情 SSOT（single source of truth）
 ```
 
----
+### 1.2 全栈 3D 轨的数据流
 
-## 4. 核心状态机设计：`story.json`
-
-`story.json` 是整个应用的唯一剧情真相源。
-
-### 数据原则
-- 一个文件管理所有节点
-- 节点之间通过 `to` / `successTo` 跳转
-- 节点既包含文本，也包含背景、音频、交互
-- 交互的完成结果必须能回流到状态机跳转
-
-### 推荐结构
-
-```json
-{
-  "meta": {
-    "title": "Surprise Vibe Coding",
-    "version": "0.1.0",
-    "startNode": "node_000"
-  },
-  "nodes": {
-    "node_000": {
-      "id": "node_000",
-      "title": "序章",
-      "text": "...",
-      "background": {
-        "image": "https://...",
-        "overlay": "linear-gradient(...)"
-      },
-      "audio": {
-        "bgm": "https://...",
-        "loop": true,
-        "autoplay": false
-      },
-      "options": [
-        {
-          "label": "继续",
-          "to": "node_001"
-        }
-      ],
-      "interaction": {
-        "type": "hold",
-        "targetMs": 1800,
-        "successTo": "node_001",
-        "hint": "..."
-      }
-    }
-  }
-}
+```text
+memorial-wall.html
+  ├─ 入口页：昵称 / 摄像头 / 上传 / 头像生成 / 提交
+  └─ 提交成功后跳转 wall-test.html
+        ↓
+wall-test.html
+  └─ 只负责挂载沉浸式 3D 照片墙
+        ↓
+js/MemorialWall.js
+  ├─ 本地 3D 入口层 + 星海引擎
+  ├─ 负责 Canvas 头像演化、上传 / 摄像头兜底、状态锁
+  ├─ 负责把最终数据 POST 到 `/api/wall`
+  └─ 负责在提交后坍塌并进入沉浸模式
+        ↓
+/api/wall
+  ├─ 接收提交数据
+  ├─ 进行字段校验
+  └─ 写入数据库 / OSS / 头像资源
 ```
 
-### `interaction` 预留模式
-- `type: "mash"`：狂点解锁
-- `type: "hold"`：长按蓄力
-- `type: "drag"`：拖拽滑动
+### 1.3 物理隔离机制
 
-### `interaction` 推荐字段
-- `type`：交互类型
-- `targetCount`：狂点目标次数
-- `targetMs`：长按目标时长
-- `targetPercent`：拖拽目标百分比
-- `successTo`：交互成功后的跳转节点
-- `hint`：界面提示文案
-- `selector`：拖拽绑定范围（可选）
+这两条轨道的隔离是“真实物理隔离”，不是同页伪隔离：
 
----
+- **DOM 隔离**
+  - 剧情轨在 `index.html` 的主 `#app` 中运行。
+  - 3D 轨在 `memorial-wall.html` / `wall-test.html` 的独立根节点中运行。
+  - 两者不共享同一个 UI 树。
 
-## 5. 前端模块拆解
+- **渲染循环隔离**
+  - 剧情轨主要依赖 DOM / CSS 动画 / 轻量特效。
+  - 3D 轨依赖独立的 `requestAnimationFrame` 循环与 WebGL Canvas。
+  - `MemorialWall.js` 的 rAF 循环不应反向驱动剧情页。
 
-### 5.1 `Renderer.js`
-职责：把 `story.json` 渲染到 DOM。
-
-#### 关键能力
-- `loadStory()`：拉取 JSON
-- `renderNode(nodeId)`：渲染单个节点
-- `renderTypewriter(text)`：逐字输出
-- `renderOptions(options)`：生成选项按钮
-- `setBackground(node)`：双层背景切换
-- 图片失败兜底为 CSS 渐变背景
-- story 加载失败时显示世界观化错误提示
-
-#### 目前状态
-- 已实现最小闭环
-- 仍可继续增强文字节奏、段落分镜、切图转场
+- **状态隔离**
+  - 剧情轨状态由 `Navigator.flags`、`story.json`、页面 DOM 状态组成。
+  - 3D 轨状态由 `localStorage.user_submitted`、本页输入态和后端提交结果组成。
+  - 二者不能共用同一份“页面内全局状态对象”来偷懒耦合。
 
 ---
 
-### 5.2 `Interaction.js`
-职责：处理玩家的物理交互。
+## 2. 核心模块与文件真实职责
 
-#### 关键能力
-- `bind(interaction, onComplete)`
-- `unbind()`
-- `mash`：点击计数 + 震动反馈
-- `hold`：按住时持续增长进度条变量
-- `drag`：根据滑动距离更新 CSS 变量与 transform
+下面按当前代码库里**真实存在**的文件来说明职责。
 
-#### 目前状态
-- 已能驱动状态机跳转
-- 已具备清理事件监听与残留状态的机制
-- 仍有进一步优化空间，比如多触点兼容、阈值动态调整
+### 2.1 剧情轨
 
----
+#### `index.html`
+- 剧情轨入口页。
+- 负责挂载主应用壳体、故事卡片区域、摄像头弹窗、彩蛋区。
+- 负责加载 `js/app.js`、`js/Renderer.js`、`js/Navigator.js` 等模块。
 
-### 5.3 `MediaManager.js`
-职责：音频解锁与 BGM 管理。
+#### `js/app.js`
+- 剧情轨胶水层与启动器。
+- 初始化 `DeviceManager`、`FxEngine`、`StoryRenderer`、`Navigator`、`Debugger`。
+- 绑定隐藏彩蛋触发、调试按钮、摄像头弹窗入口。
+- **不应**直接写剧情分支判断。
 
-#### 关键能力
-- 首次 `touchstart/click` 解除移动端音频限制
-- `playBGM()`：播放当前节点 BGM
-- `fadeBGM()`：旧音乐淡出，新音乐淡入
-- `preload()`：提前创建 Audio 实例
+#### `js/Navigator.js`
+- 剧情路由中枢。
+- 负责节点切换、历史栈、flags 写入、条件判断、节点完成后的推进。
+- 是剧情轨的状态中心。
 
-#### 目前状态
-- 已满足 iOS / 微信浏览器的基本解锁逻辑
-- 可继续做更稳的预缓存、错峰加载、网络失败回退
+#### `js/Renderer.js`
+- 剧情渲染器。
+- 读取 `story.json` 并将节点内容映射到 DOM。
+- 管理布局 class、背景、标题、正文、选项按钮、交互提示。
+- **只渲染，不决策**。
 
----
+#### `js/Interaction.js`
+- 物理交互层。
+- 处理 mash / hold / drag 等输入动作。
+- 交互成功后回调 `Navigator`。
 
-### 5.4 `CameraEgg.js`
-职责：摄像头彩蛋的采集与出卡。
+#### `js/FxEngine.js`
+- 视觉涂层引擎。
+- 管理粒子、拖尾、点击爆发、主题切换。
+- 不参与剧情逻辑，不读取 flags。
 
-#### 关键能力
-- `getUserMedia()` 获取摄像头
-- 原生 `<canvas>` 绘制最终纪念卡
-- `drawImage()` 叠加视频帧
-- `fillText()` 写入身份代号
-- `toDataURL()` 生成 Base64
-- `downloadCard()` 提供下载
+#### `js/DeviceManager.js`
+- 设备 / 端模式管理。
+- 负责 `desktop-mode` / `mobile-mode` 的自动识别与切换。
 
-#### 目前状态
-- 已完成“原生 canvas 出卡”底层路线
-- 商汤 AIGC 后端链路尚待接入真实 API
+#### `js/CameraEgg.js`
+- 剧情轨里的摄像头彩蛋模块。
+- 负责摄像头采集、身份卡合成、下载导出。
+- 与 3D 照片墙入口页不是同一个功能层。
 
----
+#### `js/MediaManager.js`
+- 音频解锁与 BGM 播放控制。
 
-### 5.5 `app.js`
-职责：全局调度器。
+#### `js/utils.js`
+- 纯工具函数。
+- 只放无副作用 helper。
 
-#### 关键能力
-- 页面启动
-- 初始节点进入
-- 节点切换统一入口 `goToNode()`
-- 交互成功后跳转
-- 选项按钮跳转
-- 隐藏彩蛋触发
-- 摄像头 Modal 打开关闭
+#### `story.json`
+- 剧情轨唯一真相源（SSOT）。
+- 剧情节点、分支、交互要求、状态写入都应在此表达。
 
-#### 目前状态
-- 是整个项目的“控制面板”
-- 目前已经把渲染、交互、音频、彩蛋串成了一条线
+### 2.2 全栈 3D 轨
 
----
+#### `memorial-wall.html`
+- 3D 轨入口页。
+- 负责 AI 头像演化、摄像头采集、本地图片上传、昵称兜底、提交按钮。
+- 根据 `localStorage.user_submitted` 决定是否自动跳转到 `wall-test.html`。
+- 当前是前端交互层，不是沉浸页。
 
-## 6. 摄像头与 AIGC 彩蛋的数据流
+#### `wall-test.html`
+- 3D 轨沉浸页。
+- 当前是 `MemorialWall` 的独立承载页。
+- 负责初始化 `js/MemorialWall.js`。
 
-### 当前设计
-1. 玩家触发隐藏彩蛋入口
-2. 打开摄像头 Modal
-3. 前端调用 `getUserMedia`
-4. Canvas 绘制当前帧
-5. 前端可把 Base64 发给 `/api/avatar`
-6. Python Serverless 负责签名、转发、鉴权
-7. 返回卡通化图片 URL
-8. 前端合成纪念卡并提供下载
+#### `js/MemorialWall.js`
+- 3D 照片墙的核心前端引擎。
+- 负责：
+  - 上层 Portal UI 结构
+  - 圆形 Canvas 头像演化
+  - 昵称 Hash 驱动粒子密度 / 颜色
+  - 图片上传后的 `Pixel Dissolve`
+  - 摄像头采集结果作为头像来源
+  - 兜底的昵称头像生成
+  - `localStorage.user_submitted` 状态锁
+  - 提交后 UI 坍塌并进入全屏 3D 星海
+  - POST 数据到 `/api/wall`
+- 同时也承担一个轻量的 WebGL 场景初始化。
 
-### 当前实现状态
-- 前端采集与本地出卡：已具备
-- 真正的后端 AIGC 转发：占位中
-- 接口层 CORS：已预留并按你的规则写死
+#### `/api/wall`
+- 3D 轨的后端提交接口。
+- 负责接收头像卡与昵称信息。
+- 当前前端提交协议已统一为 `imageBase64` 作为主图字段，并保留昵称文本信息。
 
----
-
-## 7. 响应式与兼容性策略
-
-### Mobile-First
-- 主体内容锁定在手机视口体验
-- 桌面端居中限制宽度：`max-width: 480px`
-- 桌面外围留白并加毛玻璃
-
-### 兼容策略
-- 背景图失败：CSS 渐变兜底
-- 音频限制：首次 touch/click 解锁
-- 彩蛋摄像头：关闭时立刻释放硬件
-- 交互残留：跳转时强制解绑事件与定时器
+#### 数据库 / OSS
+- 负责保存头像卡片、昵称、来源字段、图像资源。
+- 属于后端持久化层，不应由前端臆造其结构。
 
 ---
 
-## 8. 第三方依赖
+## 3. 数据流与状态锁红线
 
-### 前端
-- Tailwind CSS CDN
-- 目前未引入任何前端构建依赖
+### 3.1 剧情轨的数据规范
 
-### 后端
-`requirements.txt` 建议仅保留：
+#### `story.json` 是唯一真相源
+- 节点标题、正文、分支、交互、特效主题都应从 `story.json` 读取。
+- `Navigator.js` 只能解释数据，不应把剧情写死在代码里。
+- `Renderer.js` 只能呈现。
 
-```txt
-requests
-```
+#### 状态写入
+- `Navigator.flags` 用于剧情推进的临时状态。
+- `setFlags` 由数据驱动写入。
+- 不允许把剧情状态隐式塞进全局 DOM 属性当作主要状态源。
 
-如果后面真接商汤接口，可能再补：
-- `python-dotenv`：本地环境变量管理
-- `pydantic`：请求结构校验（可选）
+### 3.2 3D 轨的数据规范
+
+#### 提交协议
+当前 3D 轨入口页的提交，必须围绕最终输出字段组织：
+
+- `imageBase64`：统一头像主字段
+- `name` / `nickname`：昵称文本字段
+- `avatarMode`：头像来源标识，建议值为 `camera | upload | nickname`
+- `avatar`：兼容字段，若后端仍在使用旧字段可保留 [TODO/Debt]
+
+#### 头像优先级
+1. 摄像头照片
+2. 本地上传图片
+3. 昵称生成的 Canvas 头像兜底
+
+#### 状态锁
+- `localStorage.getItem('user_submitted')` 是 3D 轨前端状态锁。
+- 一旦提交成功，入口页应锁定并跳转沉浸页。
+- 已提交用户再次进入时应自动跳过入口页。
+
+### 3.3 [TODO/Debt] 提交协议清理
+当前前端和后端的字段命名仍可能存在历史包袱：
+- 某些旧逻辑可能还在使用 `avatar`
+- 某些后端校验可能只认 `imageBase64`
+
+建议后续把 `/api/wall` 的契约固化成文档并清理兼容分支，避免多字段并行导致歧义。
 
 ---
 
-## 9. 这份架构里最关键的功能节点
+## 4. 视觉红线
 
-### 第一优先级
-- `story.json` 状态机
-- `Renderer.js` 渲染引擎
-- `Interaction.js` 交互引擎
-- `app.js` 跳转调度
+这一章是给 Hermes 和视觉 Agent 的硬约束。
 
-### 第二优先级
-- `MediaManager.js` 音频稳定性
-- 摄像头彩蛋闭环
-- 后端 `/api/avatar`
+### 4.1 动画准则
 
-### 第三优先级
-- 大量剧情内容
-- 更炫的视觉特效
-- 更完整的结局分支
-- 更多隐藏彩蛋
+- **禁止**使用生硬的 `linear` 匀速过渡作为主运动语言。
+- 主运动应该使用：
+  - `lerp` / 插值曲线
+  - 非线性 easing
+  - CSS cubic-bezier
+- 允许少量线性运动用于机械细节，但不能作为主视觉风格。
+
+### 4.2 3D 质感要求
+
+3D 轨必须维持以下审美基线：
+- 辉光 / Bloom 后处理
+- PBR 材质，例如 `MeshStandardMaterial`
+- 动态星尘 / 星云 / 粒子背景
+- 不能用僵硬静态贴图替代动态体积感
+
+### 4.3 色彩管理
+
+当前主色体系是“莫兰迪赛博配色”：
+- 背景：`#0B0F19`
+- 主高亮：`#00F0FF`
+- 辅助紫：`#6B4BFF`
+- 冷白高光：`rgba(255,255,255,0.72~0.92)`
+
+其他颜色必须围绕这套冷暗底色进行组织，不能出现突兀的高饱和大面积纯色污染。
+
+### 4.4 文本可读性
+
+- 3D / 玻璃拟态 / 背景动效下，文本必须加 `text-shadow` 或等效边缘光。
+- 不能因为追求酷炫而让正文发虚、糊成一片。
+
+### 4.5 全栈 3D 轨的材质与运动红线
+
+- 优先动态生成内容，不要用死贴图凑场面。
+- 头像演化区必须保留“生成感”而不是直接把图片塞到页面中间。
+- 提交前的引力坍塌必须有明确的中心收束视觉，而不是简单淡出。
+
+---
+
+## 5. `wall-test.html` / `MemorialWall.js` 的真实运行方式
+
+### 5.1 入口页职责
+`memorial-wall.html` 负责：
+- 昵称输入
+- 摄像头拍照
+- 本地图片上传
+- AI 头像预览
+- 提交请求
+- 锁定后跳转到 `wall-test.html`
+
+### 5.2 沉浸页职责
+`wall-test.html` 负责：
+- 只做沉浸页挂载
+- 不再承载表单交互
+- 不再与摄像头 / 上传 / 提交逻辑混杂
+
+### 5.3 `MemorialWall.js` 的职责边界
+`js/MemorialWall.js` 当前承担了较多职责，既包含 Portal UI，又包含 3D 场景初始化和滚动卡片逻辑。
+
+这意味着它是一个“入口 + 场景”混合模块。这个结构可工作，但不够理想。
+
+#### [TODO/Debt]
+后续可以考虑将其拆成：
+- `MemorialWallPortal.js`：只负责入口层
+- `StarEchoEngine.js`：只负责 3D 场景
+
+目前先按现状维护，不强行拆，避免引入不必要风险。
+
+---
+
+## 6. 与后端 / 存储层的通信规范
+
+### 6.1 前端到 `/api/wall`
+入口页提交时，至少应包含：
+- `imageBase64`
+- `name` / `nickname`
+- `avatarMode`
+
+建议保留：
+- `avatar` 兼容旧字段 [TODO/Debt]
+
+### 6.2 `imageBase64` 的生成规则
+- 摄像头照片：从拍照结果转成 Base64
+- 上传图片：从本地文件转成 Base64
+- 昵称兜底：从 Canvas 导出 Base64
+
+### 6.3 昵称文本信息
+昵称必须作为独立文本字段一并保存到后端数据库，不能只存在前端预览里。
+
+---
+
+## 7. 关键文件索引
+
+### 剧情轨
+- `index.html`
+- `js/app.js`
+- `js/Navigator.js`
+- `js/Renderer.js`
+- `js/Interaction.js`
+- `js/FxEngine.js`
+- `js/DeviceManager.js`
+- `js/MediaManager.js`
+- `js/CameraEgg.js`
+- `js/utils.js`
+- `story.json`
+
+### 3D 轨
+- `memorial-wall.html`
+- `wall-test.html`
+- `js/MemorialWall.js`
+
+### 后端 / 数据层
+- `/api/wall`
+- 数据库表结构 / OSS 配置（未在前端仓库中完全显式暴露）
+
+---
+
+## 8. 维护规则总结
+
+1. **剧情轨与 3D 轨必须继续物理隔离**。
+2. **`story.json` 必须保持剧情 SSOT 地位**。
+3. **入口页头像来源必须有优先级**：摄像头 > 上传 > 昵称兜底。
+4. **提交协议应以 `imageBase64` 为主字段**，昵称文本必须同步保存。
+5. **视觉上坚持莫兰迪赛博底色、Bloom、PBR、动态粒子**。
+6. **所有明显的历史兼容与耦合问题都应以 `[TODO/Debt]` 标出，避免后续 Agent 误判为最终设计。**
+
+---
+
+## 9. 当前建议的后续整理项
+
+- [TODO/Debt] 将 `/api/wall` 的请求/响应契约补成独立说明。
+- [TODO/Debt] 明确后端保存的字段名：`name`、`nickname`、`imageBase64`、`avatarMode`。
+- [TODO/Debt] 评估是否继续保留 `avatar` 兼容字段。
+- [TODO/Debt] 考虑把 `MemorialWall.js` 再拆成入口层和沉浸层两个文件，减少单文件职责压力。
 
 ---
 
 ## 10. 结论
 
-当前代码库是**正确的骨架，不是完整成品**。
+当前项目的真实状态已经不是单一的剧情引擎，而是：
 
-你现在看到的是：
-- 入口已搭好
-- 状态机已通
-- 交互已通
-- 摄像头彩蛋链路已起步
-- 但剧情内容、资源素材、AIGC 后端和大量表现层仍在待补
+- 一条以 `story.json` 为 SSOT 的剧情轨
+- 一条以 `memorial-wall.html` / `wall-test.html` 为前后分工的独立 3D 星际相册轨
 
-这也意味着，后续最合理的推进方式不是继续“加零碎代码”，而是先确认：
-1. **要做多长的故事**
-2. **要几个分支节点**
-3. **彩蛋到底是主菜还是隐藏惊喜**
-4. **视觉要更偏赛博、治愈、悬疑还是荒诞**
-5. **比赛时间里最值得押注的是内容还是交互表现**
-
----
-
-*本文档用于项目协作与后续开发对齐。*
+后续所有 Agent 接手时，应先确认自己是在改哪条轨，再按对应模块边界进行变更，避免跨轨污染。

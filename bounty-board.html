@@ -1,0 +1,816 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <meta name="theme-color" content="#020205" />
+    <title>Bounty Board Portal</title>
+    <style>
+      :root {
+        color-scheme: dark;
+      }
+
+      html,
+      body {
+        margin: 0;
+        width: 100%;
+        height: 100%;
+        overflow: hidden;
+        background: #020205;
+        font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      }
+
+      body {
+        color: #eafcff;
+      }
+
+      .shell {
+        position: relative;
+        width: 100vw;
+        height: 100vh;
+        overflow: hidden;
+        background:
+          radial-gradient(circle at 50% 40%, rgba(26, 31, 46, 0.98) 0%, rgba(10, 14, 24, 0.96) 30%, rgba(4, 6, 12, 0.98) 56%, #020205 100%),
+          radial-gradient(circle at 20% 18%, rgba(0, 240, 255, 0.12), transparent 18%),
+          radial-gradient(circle at 78% 26%, rgba(107, 75, 255, 0.12), transparent 20%),
+          radial-gradient(circle at 50% 80%, rgba(255, 255, 255, 0.04), transparent 22%);
+      }
+
+      .shell::before,
+      .shell::after {
+        content: '';
+        position: absolute;
+        inset: -20%;
+        pointer-events: none;
+      }
+
+      .shell::before {
+        background:
+          radial-gradient(circle at 18% 28%, rgba(255, 255, 255, 0.09) 0 1px, transparent 1.5px),
+          radial-gradient(circle at 68% 16%, rgba(255, 255, 255, 0.07) 0 1px, transparent 1.5px),
+          radial-gradient(circle at 82% 72%, rgba(255, 255, 255, 0.08) 0 1px, transparent 1.5px),
+          radial-gradient(circle at 40% 74%, rgba(0, 240, 255, 0.08) 0 1px, transparent 1.7px),
+          radial-gradient(circle at 52% 48%, rgba(107, 75, 255, 0.08) 0 1px, transparent 1.8px);
+        opacity: 0.48;
+        filter: blur(0.2px);
+        animation: driftStars 26s linear infinite;
+      }
+
+      .shell::after {
+        background:
+          radial-gradient(circle at center, transparent 0 34%, rgba(0, 0, 0, 0.38) 60%, rgba(0, 0, 255, 0.72) 100%),
+          radial-gradient(circle at 50% 42%, rgba(0, 240, 255, 0.06), transparent 28%);
+        opacity: 1;
+      }
+
+      .back-btn {
+        position: fixed;
+        left: 16px;
+        top: 12px;
+        z-index: 90;
+        appearance: none;
+        -webkit-appearance: none;
+        border: 0;
+        outline: none;
+        border-radius: 8px;
+        padding: 6px 12px;
+        cursor: pointer;
+        color: #dffcff;
+        background: rgba(0, 240, 255, 0.08);
+        backdrop-filter: blur(12px);
+        -webkit-backdrop-filter: blur(12px);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.5), 0 0 18px rgba(0, 240, 255, 0.12);
+        text-shadow: 0 0 12px rgba(0, 240, 255, 0.55);
+        transition: all 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+        font-size: 12px;
+        letter-spacing: 0.06em;
+      }
+
+      .back-btn:hover {
+        transform: translateY(-1px);
+        background: rgba(0, 240, 255, 0.12);
+        box-shadow: 0 10px 40px rgba(0, 0, 0, 0.55), 0 0 28px rgba(0, 240, 255, 0.22);
+      }
+
+      #bounty-overlay {
+        width: 90vw;
+        height: 85vh;
+        position: fixed;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        z-index: 100;
+        background: rgba(10, 15, 30, 0.85);
+        backdrop-filter: blur(20px);
+        -webkit-backdrop-filter: blur(20px);
+        border: 1px solid rgba(0, 240, 255, 0.15);
+        border-radius: 24px;
+        display: flex;
+        overflow: hidden;
+        box-shadow: 0 24px 72px rgba(0, 0, 0, 0.48), 0 0 90px rgba(0, 240, 255, 0.08);
+      }
+
+      /* ── Left Panel: Holographic Board ── */
+      .board-panel {
+        flex: 6;
+        padding: 28px 32px;
+        overflow-y: auto;
+        position: relative;
+        min-height: 0;
+      }
+
+      .board-panel::-webkit-scrollbar {
+        width: 10px;
+      }
+
+      .board-panel::-webkit-scrollbar-track {
+        background: rgba(255, 255, 255, 0.03);
+      }
+
+      .board-panel::-webkit-scrollbar-thumb {
+        background: rgba(0, 240, 255, 0.22);
+        border-radius: 999px;
+      }
+
+      .board-title {
+        margin: 0 0 20px;
+        font-size: clamp(20px, 2.2vw, 28px);
+        letter-spacing: 0.08em;
+        text-shadow: 0 0 14px rgba(0, 240, 255, 0.35), 0 0 26px rgba(0, 240, 255, 0.12);
+        animation: titleFloat 4s ease-in-out infinite;
+      }
+
+      .board-container {
+        position: relative;
+        width: 100%;
+        min-height: 400px;
+      }
+
+      .bounty-card {
+        position: absolute;
+        width: 175px;
+        border-radius: 10px;
+        background: rgba(10, 14, 28, 0.78);
+        border: 1px solid rgba(0, 240, 255, 0.25);
+        box-shadow: 0 6px 24px rgba(0, 0, 0, 0.45), 0 0 12px rgba(0, 240, 255, 0.06);
+        overflow: hidden;
+        cursor: pointer;
+        transition: transform 0.45s cubic-bezier(0.25, 0.46, 0.45, 0.94),
+                    box-shadow 0.45s ease,
+                    z-index 0s;
+        z-index: 1;
+      }
+
+      .bounty-card:hover {
+        transform: rotate(0deg) scale(1.08) !important;
+        z-index: 80 !important;
+        box-shadow: 0 16px 48px rgba(0, 0, 0, 0.5), 0 0 36px rgba(0, 240, 255, 0.22);
+        border-color: rgba(0, 240, 255, 0.6);
+      }
+
+      .bounty-card img {
+        width: 100%;
+        height: 110px;
+        object-fit: cover;
+        display: block;
+      }
+
+      .bounty-card-info {
+        padding: 8px 10px;
+      }
+
+      .bounty-card-info h3 {
+        margin: 0 0 4px;
+        font-size: 12px;
+        color: #f4fbff;
+        text-shadow: 0 0 8px rgba(0, 240, 255, 0.18);
+        line-height: 1.3;
+      }
+
+      .bounty-card-info p {
+        margin: 0 0 6px;
+        font-size: 10px;
+        color: rgba(255, 255, 255, 0.55);
+        line-height: 1.4;
+      }
+
+      .bounty-reward {
+        display: inline-flex;
+        align-items: center;
+        gap: 3px;
+        padding: 3px 8px;
+        border-radius: 999px;
+        font-size: 10px;
+        letter-spacing: 0.1em;
+        color: #00f0ff;
+        border: 1px solid rgba(0, 240, 255, 0.22);
+        background: rgba(0, 240, 255, 0.08);
+        text-shadow: 0 0 8px rgba(0, 240, 255, 0.4);
+      }
+
+      .bounty-time {
+        display: block;
+        font-size: 9px;
+        color: rgba(255, 255, 255, 0.3);
+        margin-top: 5px;
+        letter-spacing: 0.04em;
+      }
+
+      /* ── Right Panel: Submission Terminal ── */
+      .terminal-panel {
+        flex: 4;
+        padding: 28px 32px;
+        border-left: 1px solid rgba(255, 255, 255, 0.05);
+        display: flex;
+        flex-direction: column;
+        overflow-y: auto;
+        min-height: 0;
+      }
+
+      .terminal-title {
+        margin: 0 0 20px;
+        font-size: clamp(16px, 1.8vw, 22px);
+        letter-spacing: 0.08em;
+        text-shadow: 0 0 14px rgba(0, 240, 255, 0.35), 0 0 26px rgba(0, 240, 255, 0.12);
+      }
+
+      .terminal-form {
+        display: flex;
+        flex-direction: column;
+        gap: 20px;
+        flex: 1;
+      }
+
+      .glow-field {
+        position: relative;
+      }
+
+      .glow-field label {
+        display: block;
+        font-size: 11px;
+        letter-spacing: 0.1em;
+        color: rgba(0, 240, 255, 0.6);
+        margin-bottom: 6px;
+        text-transform: uppercase;
+      }
+
+      .glow-field textarea,
+      .glow-field input[type="text"] {
+        width: 100%;
+        box-sizing: border-box;
+        border: 0;
+        border-bottom: 2px solid rgba(0, 240, 255, 0.18);
+        background: transparent;
+        color: #eafcff;
+        font-size: 13px;
+        font-family: inherit;
+        padding: 8px 2px;
+        outline: none;
+        transition: border-color 0.3s ease, box-shadow 0.3s ease;
+        resize: none;
+      }
+
+      .glow-field textarea:focus,
+      .glow-field input[type="text"]:focus {
+        border-bottom-color: rgba(0, 240, 255, 0.6);
+        box-shadow: 0 4px 16px rgba(0, 240, 255, 0.15);
+      }
+
+      .glow-field textarea::placeholder,
+      .glow-field input[type="text"]::placeholder {
+        color: rgba(234, 252, 255, 0.3);
+      }
+
+      .drop-zone {
+        border: 2px dashed rgba(0, 240, 255, 0.2);
+        border-radius: 14px;
+        padding: 24px 14px;
+        text-align: center;
+        cursor: pointer;
+        transition: border-color 0.3s ease, background 0.3s ease;
+        background: rgba(0, 240, 255, 0.02);
+        min-height: 90px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 6px;
+      }
+
+      .drop-zone:hover,
+      .drop-zone.drag-over {
+        border-color: rgba(0, 240, 255, 0.5);
+        background: rgba(0, 240, 255, 0.06);
+      }
+
+      .drop-zone-text {
+        font-size: 12px;
+        color: rgba(234, 252, 255, 0.5);
+        line-height: 1.5;
+      }
+
+      .drop-zone-icon {
+        font-size: 24px;
+        color: rgba(0, 240, 255, 0.35);
+      }
+
+      .drop-zone input[type="file"] {
+        display: none;
+      }
+
+      .image-preview {
+        max-width: 100%;
+        max-height: 100px;
+        border-radius: 10px;
+        margin-top: 8px;
+        display: none;
+        box-shadow: 0 4px 24px rgba(0, 0, 0, 0.3);
+      }
+
+      .image-preview.visible {
+        display: block;
+      }
+
+      .balance-display {
+        font-size: 11px;
+        color: rgba(0, 240, 255, 0.5);
+        text-align: center;
+        letter-spacing: 0.06em;
+      }
+
+      .submit-btn {
+        appearance: none;
+        -webkit-appearance: none;
+        border: 0;
+        outline: none;
+        border-radius: 14px;
+        padding: 14px 20px;
+        cursor: pointer;
+        color: #dffcff;
+        font-size: 14px;
+        letter-spacing: 0.08em;
+        background: linear-gradient(135deg, rgba(0, 240, 255, 0.25), rgba(107, 75, 255, 0.32));
+        box-shadow: 0 12px 34px rgba(0, 240, 255, 0.18), 0 0 34px rgba(107, 75, 255, 0.12);
+        text-shadow: 0 0 14px rgba(0, 240, 255, 0.6);
+        transition: all 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+        animation: btnPulse 3s ease-in-out infinite;
+        margin-top: auto;
+      }
+
+      .submit-btn:hover:not(:disabled) {
+        transform: translateY(-2px);
+        box-shadow: 0 16px 48px rgba(0, 240, 255, 0.3), 0 0 52px rgba(0, 240, 255, 0.22);
+        animation: none;
+      }
+
+      .submit-btn:active:not(:disabled) {
+        transform: scale(0.97);
+      }
+
+      .submit-btn:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+        animation: none;
+      }
+
+      .submit-btn.shake {
+        animation: btnShake 0.5s ease-in-out;
+        background: linear-gradient(135deg, rgba(255, 80, 80, 0.35), rgba(255, 50, 50, 0.4));
+        box-shadow: 0 12px 34px rgba(255, 80, 80, 0.25), 0 0 34px rgba(255, 50, 50, 0.18);
+        text-shadow: 0 0 14px rgba(255, 80, 80, 0.6);
+        border-color: rgba(255, 80, 80, 0.4);
+      }
+
+      .submit-hint {
+        font-size: 10px;
+        color: rgba(234, 252, 255, 0.3);
+        text-align: center;
+        margin-top: 4px;
+        letter-spacing: 0.06em;
+      }
+
+      .form-status {
+        padding: 8px 12px;
+        border-radius: 10px;
+        font-size: 11px;
+        line-height: 1.4;
+        display: none;
+      }
+
+      .form-status.is-visible {
+        display: block;
+      }
+
+      .form-status.success {
+        background: rgba(0, 240, 255, 0.1);
+        border: 1px solid rgba(0, 240, 255, 0.25);
+        color: rgba(0, 240, 255, 0.9);
+      }
+
+      .form-status.error {
+        background: rgba(255, 120, 120, 0.1);
+        border: 1px solid rgba(255, 120, 120, 0.25);
+        color: rgba(255, 180, 180, 0.9);
+      }
+
+      /* ── Animations ── */
+      @keyframes driftStars {
+        0% { transform: translate3d(0, 0, 0) scale(1); }
+        50% { transform: translate3d(1.2%, -0.8%, 0) scale(1.02); }
+        100% { transform: translate3d(0, 0, 0) scale(1); }
+      }
+
+      @keyframes titleFloat {
+        0%, 100% { transform: translateY(0); }
+        50% { transform: translateY(-4px); }
+      }
+
+      @keyframes btnPulse {
+        0%, 100% { box-shadow: 0 12px 34px rgba(0, 240, 255, 0.18), 0 0 34px rgba(107, 75, 255, 0.12); }
+        50% { box-shadow: 0 12px 34px rgba(0, 240, 255, 0.28), 0 0 48px rgba(0, 240, 255, 0.2), 0 0 64px rgba(107, 75, 255, 0.14); }
+      }
+
+      @keyframes btnShake {
+        0%, 100% { transform: translateX(0); }
+        20% { transform: translateX(-6px); }
+        40% { transform: translateX(6px); }
+        60% { transform: translateX(-4px); }
+        80% { transform: translateX(4px); }
+      }
+
+      @keyframes cardFlyIn {
+        0% {
+          opacity: 0;
+          transform: translateY(calc(var(--fly-y, 40px))) scale(0.85) rotate(calc(var(--card-rotate, 0deg) * -1.5));
+        }
+        60% {
+          opacity: 1;
+        }
+        100% {
+          opacity: 1;
+          transform: translateY(0) scale(var(--card-scale, 1)) rotate(var(--card-rotate, 0deg));
+        }
+      }
+
+      @media (max-width: 900px) {
+        #bounty-overlay {
+          width: calc(100vw - 20px);
+          height: auto;
+          min-height: calc(100vh - 20px);
+          flex-direction: column;
+        }
+
+        .board-panel {
+          flex: none;
+          padding: 20px;
+          min-height: 320px;
+        }
+
+        .terminal-panel {
+          flex: none;
+          border-left: none;
+          border-top: 1px solid rgba(255, 255, 255, 0.05);
+          padding: 20px;
+        }
+
+        .board-container {
+          min-height: 280px;
+        }
+
+        .bounty-card {
+          width: 160px;
+        }
+
+        .bounty-card img {
+          height: 100px;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="shell"></div>
+
+    <button class="back-btn" type="button" onclick="window.location.href='./memorial-wall.html'">&#x27F5; 返回商铺</button>
+
+    <div id="bounty-overlay">
+      <!-- Left: Holographic Board -->
+      <div class="board-panel">
+        <h1 class="board-title">✦ 全息悬赏板 ✦</h1>
+        <div class="board-container" id="board-container"></div>
+      </div>
+
+      <!-- Right: Submission Terminal -->
+      <div class="terminal-panel">
+        <h2 class="terminal-title">✧ 悬赏令提交台</h2>
+        <form class="terminal-form" id="bounty-form" autocomplete="off">
+          <div class="balance-display">当前余额: <span id="balance-val">0</span> ✦ 星尘</div>
+          <div class="glow-field">
+            <label for="bounty-reward">悬赏金额 (星尘)</label>
+            <input type="number" id="bounty-reward" min="1" step="1" placeholder="输入悬赏的星尘数量（正整数）" style="background:transparent;border:none;border-bottom:1px solid rgba(0,240,255,0.3);outline:none;color:#eafcff;padding:8px 0;font-size:14px;width:100%;" />
+          </div>
+          <div class="glow-field">
+            <label for="bounty-desc">悬赏描述</label>
+            <textarea id="bounty-desc" rows="3" placeholder="描述你想要悬赏的内容..."></textarea>
+          </div>
+          <div class="glow-field">
+            <label>悬赏附图</label>
+            <div class="drop-zone" id="drop-zone">
+              <div class="drop-zone-icon">&#x25C7;</div>
+              <div class="drop-zone-text">
+                点击或拖拽上传图片<br />
+                <span style="font-size:10px; opacity:0.5;">支持 JPG / PNG / WEBP</span>
+              </div>
+              <input type="file" id="bounty-file" accept="image/*" />
+              <img class="image-preview" id="image-preview" alt="预览" />
+            </div>
+          </div>
+          <div id="form-status" class="form-status"></div>
+          <button class="submit-btn" type="submit" id="submit-btn">✦ 发布悬赏令</button>
+          <div class="submit-hint">悬赏金额将从你的星尘余额中扣除</div>
+        </form>
+      </div>
+    </div>
+
+    <script src="./js/EconomyManager.js"></script>
+    <script>
+      /* ── State ── */
+      let bounties = [];
+      let uploadedSource = '';
+
+      /* ── Fetch bounties from API ── */
+      async function fetchBounties() {
+        try {
+          const res = await fetch('/api/bounty');
+          const json = await res.json();
+          if (json.ok && Array.isArray(json.data)) {
+            bounties = json.data;
+          } else {
+            bounties = [];
+          }
+        } catch (err) {
+          console.error('[bounty] fetch failed', err);
+          bounties = [];
+        }
+      }
+
+      /* ── Format relative time ── */
+      function formatTime(isoStr) {
+        if (!isoStr) return '';
+        const d = new Date(isoStr);
+        const now = new Date();
+        const diff = Math.floor((now - d) / 1000);
+        if (diff < 60) return '刚刚';
+        if (diff < 3600) return Math.floor(diff / 60) + ' 分钟前';
+        if (diff < 86400) return Math.floor(diff / 3600) + ' 小时前';
+        if (diff < 604800) return Math.floor(diff / 86400) + ' 天前';
+        return d.toLocaleDateString('zh-CN');
+      }
+
+      /* ── Layout: DENSE chaotic cork-board ── */
+      function renderBoard() {
+        const container = document.getElementById('board-container');
+        if (!container) return;
+        container.innerHTML = '';
+
+        if (bounties.length === 0) {
+          container.style.minHeight = '120px';
+          container.innerHTML = '<p style="position:absolute;top:20px;left:20px;color:rgba(255,255,255,0.3);font-size:13px;">暂无悬赏 — 成为第一个发布的人 ✦</p>';
+          return;
+        }
+
+        const baseCardW = 175;
+        const baseImgH = 110;
+        const gapX = 8;
+        const baseRowH = 205; /* info area ~95px + image 110px */
+        const availW = container.clientWidth - 40;
+
+        /* Force dense layout: 3-4 columns */
+        const maxCols = Math.min(4, Math.max(3, Math.floor(availW / (baseCardW + gapX))));
+
+        /* Build irregular row pattern: randomly alternate between maxCols and maxCols-1 */
+        const rowCols = [];
+        let remaining = bounties.length;
+        while (remaining > 0) {
+          const pick = remaining >= maxCols && Math.random() > 0.35 ? maxCols : Math.max(2, Math.min(remaining, maxCols - 1));
+          rowCols.push(Math.min(pick, remaining));
+          remaining -= pick;
+        }
+
+        /* Compute top positions with random vertical gaps */
+        const rowTops = [];
+        let curTop = 8;
+        for (let r = 0; r < rowCols.length; r++) {
+          const rowGap = 12 + Math.random() * 22;
+          rowTops.push(curTop);
+          const heightVar = baseRowH + (Math.random() * 40 - 15);
+          curTop += heightVar + rowGap;
+        }
+        container.style.minHeight = String(curTop + 16) + 'px';
+
+        /* Place cards */
+        let cardIndex = 0;
+        for (let r = 0; r < rowCols.length; r++) {
+          const colsInRow = rowCols[r];
+          const rowWidth = colsInRow * baseCardW + (colsInRow - 1) * gapX;
+          const rowOffsetX = Math.max(6, (availW - rowWidth) / 2);
+
+          for (let c = 0; c < colsInRow && cardIndex < bounties.length; c++, cardIndex++) {
+            const bounty = bounties[cardIndex];
+
+            const rotate = (Math.random() * 18 - 8).toFixed(2);
+            const offsetY = (Math.random() * 55 - 25).toFixed(0);
+            const offsetX = (Math.random() * 24 - 12).toFixed(0);
+            const lineClamp = Math.random() > 0.5 ? 2 : 3;
+            const overlapPush = (Math.random() > 0.65) ? -(Math.random() * 14 + 6) : 0;
+
+            /* Random scale: 0.92, 1.0, or 1.05 */
+            const scaleOptions = [0.92, 0.95, 1.0, 1.0, 1.05];
+            const cardScale = scaleOptions[Math.floor(Math.random() * scaleOptions.length)];
+
+            const left = rowOffsetX + c * (baseCardW + gapX) + Number(offsetX) + overlapPush;
+            const top = rowTops[r] + Number(offsetY);
+
+            const card = document.createElement('div');
+            card.className = 'bounty-card';
+            card.style.left = left + 'px';
+            card.style.top = top + 'px';
+            card.style.setProperty('--card-rotate', rotate + 'deg');
+            card.style.setProperty('--card-scale', cardScale);
+            card.style.setProperty('--fly-y', (20 + Math.random() * 40) + 'px');
+            card.style.transform = `rotate(${rotate}deg) scale(${cardScale})`;
+            card.style.zIndex = Math.floor(Math.random() * 5) + 1;
+            card.style.animation = `cardFlyIn 0.55s ${cardIndex * 0.06}s both ease-out`;
+
+            const desc = (bounty.description || '').substring(0, 80);
+            const reward = bounty.reward ? Number(bounty.reward) : 0;
+            const timeStr = formatTime(bounty.created_at);
+
+            card.innerHTML = `
+              <img src="${bounty.image_url || ''}" alt="bounty" loading="lazy" onerror="this.style.display='none'" />
+              <div class="bounty-card-info">
+                <h3>${desc.substring(0, 28)}${desc.length > 28 ? '...' : ''}</h3>
+                <p style="display:-webkit-box;-webkit-line-clamp:${lineClamp};-webkit-box-orient:vertical;overflow:hidden;">${desc}</p>
+                <span class="bounty-reward">✦ ${reward} 星尘</span>
+                ${timeStr ? '<span class="bounty-time">' + timeStr + '</span>' : ''}
+              </div>
+            `;
+
+            container.appendChild(card);
+          }
+        }
+      }
+
+      /* ── Image Upload / Drag-and-Drop ── */
+      const dropZone = document.getElementById('drop-zone');
+      const fileInput = document.getElementById('bounty-file');
+      const imagePreview = document.getElementById('image-preview');
+
+      dropZone.addEventListener('click', (e) => {
+        if (e.target !== fileInput) fileInput.click();
+      });
+
+      dropZone.addEventListener('dragover', (e) => {
+        e.preventDefault();
+        dropZone.classList.add('drag-over');
+      });
+
+      dropZone.addEventListener('dragleave', () => {
+        dropZone.classList.remove('drag-over');
+      });
+
+      dropZone.addEventListener('drop', (e) => {
+        e.preventDefault();
+        dropZone.classList.remove('drag-over');
+        const file = e.dataTransfer.files?.[0];
+        if (file && file.type.startsWith('image/')) handleFile(file);
+      });
+
+      fileInput.addEventListener('change', () => {
+        const file = fileInput.files?.[0];
+        if (file) handleFile(file);
+      });
+
+      function handleFile(file) {
+        const reader = new FileReader();
+        reader.onload = () => {
+          uploadedSource = String(reader.result);
+          imagePreview.src = uploadedSource;
+          imagePreview.classList.add('visible');
+          dropZone.querySelector('.drop-zone-text').style.display = 'none';
+          dropZone.querySelector('.drop-zone-icon').style.display = 'none';
+        };
+        reader.readAsDataURL(file);
+      }
+
+      /* ── Form Submit: real API with EconomyManager ── */
+      const formStatus = document.getElementById('form-status');
+      const submitBtn = document.getElementById('submit-btn');
+
+      document.getElementById('bounty-form').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        clearStatus();
+
+        const rewardInput = document.getElementById('bounty-reward').value.trim();
+        const reward = parseInt(rewardInput, 10);
+        if (!rewardInput || isNaN(reward) || reward < 1 || !Number.isInteger(reward)) {
+          showStatus('请输入有效的悬赏金额（正整数）', 'error');
+          return;
+        }
+        if (typeof EconomyManager !== 'undefined' && reward > EconomyManager.getBalance()) {
+          showStatus('星尘余额不足！你只有 ' + EconomyManager.getBalance() + ' ✦', 'error');
+          return;
+        }
+
+        const desc = document.getElementById('bounty-desc').value.trim();
+        if (!desc) {
+          showStatus('请填写悬赏描述', 'error');
+          return;
+        }
+        if (!uploadedSource) {
+          showStatus('请上传悬赏附图', 'error');
+          return;
+        }
+
+        /* Loading state */
+        submitBtn.disabled = true;
+        submitBtn.textContent = '⟡ 发布中...';
+        showStatus('正在上传并记录悬赏令...', 'success');
+
+        try {
+          const res = await fetch('/api/bounty', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              description: desc,
+              reward: reward,
+              imageBase64: uploadedSource,
+            }),
+          });
+
+          const json = await res.json();
+          if (!res.ok || !json.ok) {
+            throw new Error(json.error || 'Server error');
+          }
+
+          /* Deduct balance */
+          if (typeof EconomyManager !== 'undefined') {
+            EconomyManager.spendStardust(reward);
+          }
+
+          /* Success */
+          showStatus('✦ 悬赏令已发布！扣除 ' + reward + ' ✦', 'success');
+          document.getElementById('bounty-desc').value = '';
+          document.getElementById('bounty-reward').value = '';
+          uploadedSource = '';
+          imagePreview.classList.remove('visible');
+          dropZone.querySelector('.drop-zone-text').style.display = '';
+          dropZone.querySelector('.drop-zone-icon').style.display = '';
+          fileInput.value = '';
+
+          /* Re-fetch and re-render board */
+          await fetchBounties();
+          renderBoard();
+        } catch (err) {
+          console.error('[bounty] submit failed', err);
+          showStatus('发布失败: ' + err.message, 'error');
+        } finally {
+          submitBtn.disabled = false;
+          submitBtn.textContent = '✦ 发布悬赏令';
+        }
+      });
+
+      function showStatus(msg, type) {
+        formStatus.textContent = msg;
+        formStatus.className = 'form-status is-visible ' + type;
+      }
+
+      function clearStatus() {
+        formStatus.className = 'form-status';
+        formStatus.textContent = '';
+      }
+
+      /* ── Balance display ── */
+      function updateBalanceDisplay() {
+        const el = document.getElementById('balance-val');
+        if (el && typeof EconomyManager !== 'undefined') {
+          el.textContent = EconomyManager.getBalance();
+        }
+      }
+
+      /* ── Init ── */
+      window.addEventListener('DOMContentLoaded', async () => {
+        updateBalanceDisplay();
+        if (typeof EconomyManager !== 'undefined') {
+          EconomyManager.onChange(updateBalanceDisplay);
+        }
+        await fetchBounties();
+        renderBoard();
+      });
+
+      window.addEventListener('resize', () => {
+        renderBoard();
+      });
+    </script>
+  </body>
+</html>

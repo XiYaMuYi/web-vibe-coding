@@ -1,119 +1,43 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="zh-CN">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-    <meta name="theme-color" content="#050816" />
-    <title>Surprise Vibe Coding</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link rel="stylesheet" href="./css/base.css" />
-    <link rel="stylesheet" href="./css/animations.css" />
-    <link rel="stylesheet" href="./css/effects.css" />
-    <script>
-      (function () {
-        document.documentElement.style.visibility = 'hidden';
-        document.documentElement.classList.add(window.innerWidth >= 768 ? 'desktop-mode' : 'mobile-mode');
-        window.addEventListener('DOMContentLoaded', () => {
-          requestAnimationFrame(() => {
-            document.documentElement.style.visibility = '';
-          });
-        });
-      })();
-    </script>
-  </head>
-  <body class="mobile-mode">
-    <main class="shell">
-      <section class="app-frame app-glitch noise-grid" id="app">
-        <div id="appError" class="hidden absolute inset-0 z-40 flex items-center justify-center px-8 text-center text-base leading-8 text-white/80 bg-black/70 backdrop-blur-md"></div>
-        <div class="bg-layer is-active" id="bgLayerA"></div>
-        <div class="bg-layer is-idle" id="bgLayerB"></div>
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <meta name="theme-color" content="#0B0F19" />
+  <title>星辰典当行</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    html, body { width: 100%; height: 100%; overflow: hidden; background: #000; }
+  </style>
+</head>
+<body style="margin: 0; overflow: hidden; background: #000;">
+  <!-- 全局 BGM -->
+  <audio id="global-bgm" src="./audio/all.mp3" loop preload="auto"></audio>
 
-        <div id="hiddenEggZone" class="hidden-eggs"></div>
+  <!-- 启动拦截 -->
+  <div id="start-overlay" style="position:fixed; z-index:9999; inset:0; background:#0B0F19; display:flex; flex-direction:column; align-items:center; justify-content:center; color:#fff; cursor:pointer;">
+    <h1 style="font-size: clamp(28px, 5vw, 48px); letter-spacing: 4px; text-shadow: 0 0 10px #00F0FF; font-family: serif;">星辰典当行</h1>
+    <p style="opacity: 0.7; margin-top: 20px; font-size: 14px; letter-spacing: 2px;">[ 点击任意处，连接星轨 ]</p>
+  </div>
 
-        <div class="relative z-10 flex min-h-screen flex-col justify-between p-4 sm:p-5 story-viewport" id="stage">
-          <header class="pt-2 mobile-only">
-            <div class="flex items-center justify-between text-xs tracking-[0.28em] text-white/60 uppercase">
-              <span>Vibe Coding</span>
-              <span id="nodeId">node_000</span>
-            </div>
-          </header>
+  <!-- 全屏 Iframe 承载所有子页面 -->
+  <iframe id="app-frame" src="" style="width:100vw; height:100vh; border:none; display:none;"></iframe>
 
-          <section class="story-card flex-1 flex items-end pb-4">
-            <div class="glass-panel w-full rounded-[24px] p-4 sm:p-5">
-              <div class="mb-3 flex items-center justify-between gap-3">
-                <div class="flex-1">
-                  <h1 id="storyTitle" class="text-lg font-semibold text-white">故事标题</h1>
-                </div>
-                <div id="interactionBadge" class="hidden hud-badge rounded-full px-3 py-1"></div>
-              </div>
-
-              <div class="hidden relative overflow-hidden rounded-2xl border border-white/8 bg-black/20 story-hero">
-                <img id="storyImage" alt="story visual" class="h-full w-full object-cover" />
-                <div class="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/78 via-black/24 to-transparent"></div>
-              </div>
-
-              <div class="mt-4 space-y-3">
-                <p id="storyText" class="min-h-[5.5rem] text-[15px] leading-relaxed tracking-wide text-white/80 type-cursor"></p>
-                <div id="optionList" class="grid gap-3 options-dock"></div>
-              </div>
-            </div>
-          </section>
-
-          <div id="cameraModal" class="hidden fixed inset-0 z-50">
-            <div class="absolute inset-0 bg-black/70 backdrop-blur-md"></div>
-            <div class="relative mx-auto flex min-h-full max-w-[480px] items-end px-4 py-4 sm:items-center">
-              <div class="glass-panel w-full rounded-[28px] border border-cyan-300/20 bg-[#060913]/90 p-4 shadow-[0_0_40px_rgba(34,211,238,0.12)]">
-                <div class="mb-4 flex items-center justify-between">
-                  <div>
-                    <p class="text-[11px] uppercase tracking-[0.32em] text-cyan-200/70">Camera Egg</p>
-                    <h2 class="mt-1 text-lg font-semibold text-white">专属身份卡生成器</h2>
-                  </div>
-                  <button id="cameraCloseBtn" class="rounded-full border border-white/10 bg-white/5 px-3 py-1 text-xs text-white/70">关闭</button>
-                </div>
-
-                <div class="space-y-4">
-                  <div class="overflow-hidden rounded-[24px] border border-cyan-300/20 bg-black/40">
-                    <video id="cameraPreview" class="h-64 w-full object-cover" autoplay muted playsinline></video>
-                    <img id="cameraCardPreview" alt="identity card preview" class="hidden h-64 w-full object-cover" />
-                  </div>
-
-                  <div id="cameraStatus" class="rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-sm leading-6 text-white/80">
-                    准备连接您的光学传感器。
-                  </div>
-
-                  <div class="grid grid-cols-2 gap-3">
-                    <button id="cameraGenerateBtn" class="btn-soft rounded-2xl border border-cyan-400/30 bg-cyan-400/15 px-4 py-3 text-sm font-medium text-cyan-50">生成身份卡</button>
-                    <button id="downloadCardBtn" class="hidden btn-soft rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-sm font-medium text-white">下载卡片</button>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <footer class="pb-[env(safe-area-inset-bottom)] text-center text-[11px] tracking-[0.24em] text-white/35 uppercase mobile-only">
-            Drag • Hold • Mash • Story Engine
-          </footer>
-        </div>
-      </section>
-    </main>
-
-    <script src="./js/utils.js"></script>
-    <script src="./js/Renderer.js"></script>
-    <script src="./js/Interaction.js"></script>
-    <script src="./js/FxEngine.js"></script>
-    <script src="./js/MediaManager.js"></script>
-    <script src="./js/CameraEgg.js"></script>
-    <script src="./js/Navigator.js"></script>
-    <script src="./js/DeviceManager.js"></script>
-    <script src="./js/app.js"></script>
-    <script>
-      window.addEventListener('DOMContentLoaded', () => {
-        window.AppController?.boot?.().catch((error) => {
-          console.error(error);
-        });
+  <script>
+    document.getElementById('start-overlay').addEventListener('click', function () {
+      // 1. 突破浏览器限制，播放音频
+      const bgm = document.getElementById('global-bgm');
+      bgm.volume = 0.5;
+      bgm.play().catch(() => {
+        // 如果自动播放被阻止，静默降级
       });
-    </script>
-  </body>
+
+      // 2. 隐藏拦截器，显示 Iframe 并加载真实剧情页
+      this.style.display = 'none';
+      const frame = document.getElementById('app-frame');
+      frame.style.display = 'block';
+      frame.src = 'story.html';
+    });
+  </script>
+</body>
 </html>

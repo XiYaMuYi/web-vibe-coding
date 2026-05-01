@@ -1,0 +1,318 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <meta name="theme-color" content="#020205" />
+    <title>星际回声照片墙</title>
+    <script type="importmap">
+      {
+        "imports": {
+          "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+          "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
+        }
+      }
+    </script>
+    <style>
+      :root {
+        color-scheme: dark;
+      }
+
+      html,
+      body {
+        width: 100%;
+        height: 100%;
+        margin: 0;
+        overflow: hidden;
+        background:
+          radial-gradient(circle at 50% 42%, #1a1f2e 0%, #0f1320 34%, #060810 58%, #020205 100%);
+        font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      }
+
+      body {
+        color: #fff;
+      }
+
+      #standalone-root {
+        position: fixed;
+        inset: 0;
+        width: 100vw;
+        height: 100vh;
+        overflow: hidden;
+      }
+
+      #standalone-root::before,
+      #standalone-root::after {
+        content: '';
+        position: absolute;
+        inset: 0;
+        pointer-events: none;
+      }
+
+      #standalone-root::before {
+        background:
+          radial-gradient(circle at 50% 35%, rgba(0, 240, 255, 0.08), transparent 34%),
+          radial-gradient(circle at 18% 20%, rgba(107, 75, 255, 0.08), transparent 22%),
+          radial-gradient(circle at 82% 26%, rgba(255, 255, 255, 0.04), transparent 20%);
+        opacity: 0.95;
+      }
+
+      #standalone-root::after {
+        background:
+          radial-gradient(circle at center, transparent 0 34%, rgba(0, 0, 0, 0.36) 60%, rgba(0, 0, 0, 0.76) 100%);
+      }
+
+      .wall-shell {
+        position: relative;
+        width: 100vw;
+        height: 100vh;
+      }
+
+      .wall-canvas-host {
+        position: absolute;
+        inset: 0;
+      }
+
+      .wall-ui {
+        position: absolute;
+        inset: 0;
+        pointer-events: none;
+        z-index: 2;
+      }
+
+      .global-reset-bar {
+        display: none;
+      }
+
+      .wall-panel {
+        pointer-events: auto;
+        position: absolute;
+        left: 50%;
+        top: calc(20px + env(safe-area-inset-top, 0px));
+        transform: translateX(-50%);
+        width: min(420px, calc(100vw - 40px));
+        padding: 16px;
+        border-radius: 20px;
+        background: rgba(255, 255, 255, 0.04);
+        backdrop-filter: blur(10px);
+        -webkit-backdrop-filter: blur(10px);
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        box-shadow: 0 6px 24px 0 rgba(0, 0, 0, 0.4), 0 0 48px rgba(0, 240, 255, 0.04);
+        text-align: center;
+      }
+
+      .wall-panel h1,
+      .wall-panel p,
+      .wall-panel span,
+      .wall-panel button {
+        text-shadow: 0 0 12px rgba(0, 240, 255, 0.18);
+      }
+
+      .wall-nav-btn.is-active {
+        color: #dffcff;
+        text-shadow: 0 0 10px rgba(0, 240, 255, 0.4);
+      }
+
+      .wall-nav-btn.is-active::after {
+        transform: translateX(-50%) scaleX(0);
+      }
+
+      .wall-panel h1 {
+        margin: 0 0 8px;
+        font-size: 22px;
+        letter-spacing: 0.12em;
+        color: #f4fbff;
+      }
+
+      .wall-copy {
+        margin: 0 0 12px;
+        color: rgba(255, 255, 255, 0.65);
+        line-height: 1.6;
+        font-size: 13px;
+      }
+
+      .wall-meta {
+        display: flex;
+        gap: 8px;
+        flex-wrap: wrap;
+        justify-content: center;
+        margin-top: 10px;
+        color: rgba(234, 252, 255, 0.75);
+        font-size: 11px;
+        letter-spacing: 0.06em;
+      }
+
+      .wall-meta-item {
+        padding: 6px 10px;
+        border-radius: 999px;
+        background: rgba(255, 255, 255, 0.04);
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
+      }
+
+      .wall-speed-controls {
+        display: flex;
+        gap: 8px;
+        flex-wrap: wrap;
+        justify-content: center;
+        margin-top: 10px;
+      }
+
+      .wall-speed-btn {
+        appearance: none;
+        -webkit-appearance: none;
+        border: 0;
+        outline: none;
+        border-radius: 12px;
+        padding: 8px 12px;
+        cursor: pointer;
+        color: #dffcff;
+        background: rgba(0, 240, 255, 0.06);
+        backdrop-filter: blur(10px);
+        -webkit-backdrop-filter: blur(10px);
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        box-shadow: 0 4px 20px 0 rgba(0, 0, 0, 0.35), 0 0 14px rgba(0, 240, 255, 0.08);
+        transition: all 0.35s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+        font-size: 12px;
+        letter-spacing: 0.06em;
+      }
+
+      .wall-speed-btn:hover {
+        transform: translateY(-1px);
+        background: rgba(0, 240, 255, 0.1);
+        box-shadow: 0 6px 28px rgba(0, 0, 0, 0.4), 0 0 20px rgba(0, 240, 255, 0.16);
+      }
+
+      .wall-speed-btn.is-active {
+        background: rgba(0, 240, 255, 0.14);
+        box-shadow: 0 6px 28px rgba(0, 0, 0, 0.4), 0 0 24px rgba(0, 240, 255, 0.2);
+      }
+
+      .wall-speed-readout {
+        margin-top: 10px;
+        color: rgba(223, 252, 255, 0.7);
+        font-size: 11px;
+        letter-spacing: 0.06em;
+      }
+
+      .wall-avatar {
+        position: absolute;
+        left: 50%;
+        top: 44%;
+        width: 122px;
+        height: 122px;
+        transform: translate(-50%, -50%);
+        border-radius: 50%;
+        overflow: hidden;
+        background: radial-gradient(circle at 30% 30%, rgba(255, 255, 255, 0.56), rgba(255, 255, 255, 0.1) 34%, rgba(255, 255, 255, 0.02) 62%, transparent 72%), radial-gradient(circle at center, rgba(0, 240, 255, 0.14), rgba(0, 240, 255, 0.02) 60%, transparent 72%);
+        box-shadow: 0 0 80px rgba(0, 240, 255, 0.16), inset 0 0 36px rgba(255, 255, 255, 0.08);
+        z-index: 5;
+        pointer-events: none;
+      }
+
+      .wall-avatar img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        display: block;
+        border-radius: 50%;
+        clip-path: circle(49% at 50% 50%);
+      }
+
+      .wall-nav-bar {
+        position: fixed;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        z-index: 10;
+        display: flex;
+        justify-content: center;
+        gap: 0;
+        padding: 12px 16px calc(12px + env(safe-area-inset-bottom, 0px));
+        background: linear-gradient(to top, rgba(2, 2, 5, 0.92) 0%, rgba(2, 2, 5, 0.6) 60%, transparent 100%);
+        pointer-events: auto;
+      }
+
+      .wall-nav-btn {
+        appearance: none;
+        -webkit-appearance: none;
+        border: 0;
+        outline: none;
+        background: transparent;
+        cursor: pointer;
+        padding: 10px 18px;
+        color: rgba(255, 255, 255, 0.5);
+        font-size: 13px;
+        font-family: inherit;
+        letter-spacing: 0.08em;
+        position: relative;
+        transition: all 0.3s ease;
+        text-decoration: none;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 4px;
+      }
+
+      .wall-nav-btn::after {
+        content: '';
+        position: absolute;
+        bottom: 0;
+        left: 50%;
+        transform: translateX(-50%) scaleX(0);
+        width: 60%;
+        height: 2px;
+        background: rgba(0, 240, 255, 0.7);
+        border-radius: 1px;
+        transition: transform 0.3s ease;
+        box-shadow: 0 0 8px rgba(0, 240, 255, 0.4);
+      }
+
+      .wall-nav-btn:hover {
+        color: rgba(255, 255, 255, 0.85);
+      }
+
+      .wall-nav-btn:hover::after {
+        transform: translateX(-50%) scaleX(1);
+      }
+
+      .wall-nav-btn.is-active {
+        color: #dffcff;
+        text-shadow: 0 0 10px rgba(0, 240, 255, 0.4);
+      }
+
+      .wall-nav-btn.is-active::after {
+        transform: translateX(-50%) scaleX(1);
+        background: rgba(0, 240, 255, 0.9);
+        box-shadow: 0 0 12px rgba(0, 240, 255, 0.6);
+      }
+    </style>
+  </head>
+  <body>
+    <div class="global-reset-bar">
+      <span class="global-reset-tag" id="modeBadge">正式模式</span>
+      <button class="global-reset-btn" id="resetEntryBtn" type="button">重置入口</button>
+    </div>
+    <nav class="wall-nav-bar">
+      <a href="story.html" class="wall-nav-btn">元初之所</a>
+      <a href="memorial-wall.html" class="wall-nav-btn">灵魂商店</a>
+      <a href="bounty-board.html" class="wall-nav-btn">星际悬赏</a>
+      <a href="truth-branding.html" class="wall-nav-btn">真理烙印</a>
+    </nav>
+    <div id="standalone-root"></div>
+    <script src="./js/global-reset.js"></script>
+    <script src="./js/EconomyManager.js"></script>
+    <script src="./js/CommodityService.js"></script>
+    <script src="./js/MemorialWall.js"></script>
+    <script src="./js/progressive-card-loader.js"></script>
+    <script>
+      window.addEventListener('DOMContentLoaded', () => {
+        window.GlobalReset?.mount?.();
+        const root = document.getElementById('standalone-root');
+        window.MemorialWall?.mount?.(root).catch?.((error) => {
+          console.error(error);
+        });
+      });
+    </script>
+  </body>
+</html>

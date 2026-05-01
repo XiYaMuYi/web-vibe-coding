@@ -1,0 +1,708 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <meta name="theme-color" content="#020205" />
+    <title>真名刻印 (Truth Branding)</title>
+    <style>
+      :root {
+        color-scheme: dark;
+        --cyan: #00f0ff;
+        --purple: #6b4bff;
+        --dark-bg: #020205;
+      }
+
+      html,
+      body {
+        margin: 0;
+        width: 100%;
+        height: 100%;
+        overflow: hidden;
+        background: var(--dark-bg);
+        font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+        color: #eafcff;
+      }
+
+      /* ===== STARFIELD SHELL (matches memorial-wall.html) ===== */
+
+      .shell {
+        position: relative;
+        width: 100vw;
+        height: 100vh;
+        overflow: hidden;
+        background:
+          radial-gradient(circle at 50% 40%, rgba(26, 31, 46, 0.98) 0%, rgba(10, 14, 24, 0.96) 30%, rgba(4, 6, 12, 0.98) 56%, #020205 100%),
+          radial-gradient(circle at 20% 18%, rgba(0, 240, 255, 0.12), transparent 18%),
+          radial-gradient(circle at 78% 26%, rgba(107, 75, 255, 0.12), transparent 20%),
+          radial-gradient(circle at 50% 80%, rgba(255, 255, 255, 0.04), transparent 22%);
+      }
+
+      .shell::before,
+      .shell::after {
+        content: '';
+        position: absolute;
+        inset: -20%;
+        pointer-events: none;
+      }
+
+      .shell::before {
+        background:
+          radial-gradient(circle at 18% 28%, rgba(255, 255, 255, 0.09) 0 1px, transparent 1.5px),
+          radial-gradient(circle at 68% 16%, rgba(255, 255, 255, 0.07) 0 1px, transparent 1.5px),
+          radial-gradient(circle at 82% 72%, rgba(255, 255, 255, 0.08) 0 1px, transparent 1.5px),
+          radial-gradient(circle at 40% 74%, rgba(0, 240, 255, 0.08) 0 1px, transparent 1.7px),
+          radial-gradient(circle at 52% 48%, rgba(107, 75, 255, 0.08) 0 1px, transparent 1.8px);
+        opacity: 0.48;
+        filter: blur(0.2px);
+        animation: driftStars 26s linear infinite;
+      }
+
+      .shell::after {
+        background:
+          radial-gradient(circle at center, transparent 0 34%, rgba(0, 0, 0, 0.38) 60%, rgba(0, 0, 0, 0.72) 100%),
+          radial-gradient(circle at 50% 42%, rgba(0, 240, 255, 0.06), transparent 28%);
+        opacity: 1;
+      }
+
+      /* ===== BACK BUTTON ===== */
+
+      .back-btn {
+        position: fixed;
+        left: 16px;
+        top: 16px;
+        z-index: 90;
+        appearance: none;
+        -webkit-appearance: none;
+        border: 0;
+        outline: none;
+        border-radius: 14px;
+        padding: 10px 14px;
+        cursor: pointer;
+        color: #dffcff;
+        background: rgba(0, 240, 255, 0.08);
+        backdrop-filter: blur(12px);
+        -webkit-backdrop-filter: blur(12px);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.5), 0 0 18px rgba(0, 240, 255, 0.12);
+        text-shadow: 0 0 12px rgba(0, 240, 255, 0.55);
+        transition: all 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+        font-size: 13px;
+        letter-spacing: 0.06em;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+      }
+
+      .back-btn:hover {
+        transform: translateY(-1px);
+        background: rgba(0, 240, 255, 0.12);
+        box-shadow: 0 10px 40px rgba(0, 0, 0, 0.55), 0 0 28px rgba(0, 240, 255, 0.22);
+      }
+
+      /* ===== HUD ===== */
+
+      .stardust-hud {
+        position: fixed;
+        right: 16px;
+        top: 16px;
+        z-index: 90;
+        display: flex;
+        gap: 10px;
+        align-items: center;
+      }
+
+      .stardust-hud .hud-tag {
+        padding: 8px 12px;
+        border-radius: 999px;
+        background: rgba(255, 255, 255, 0.05);
+        backdrop-filter: blur(12px);
+        -webkit-backdrop-filter: blur(12px);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.28);
+        color: rgba(234, 252, 255, 0.82);
+        font-size: 12px;
+        letter-spacing: 0.08em;
+      }
+
+      .stardust-hud .hud-balance {
+        padding: 8px 14px;
+        border-radius: 999px;
+        background: rgba(0, 240, 255, 0.08);
+        backdrop-filter: blur(12px);
+        -webkit-backdrop-filter: blur(12px);
+        border: 1px solid rgba(0, 240, 255, 0.15);
+        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.28), 0 0 12px rgba(0, 240, 255, 0.08);
+        color: #dffcff;
+        font-size: 13px;
+        letter-spacing: 0.1em;
+        text-shadow: 0 0 10px rgba(0, 240, 255, 0.25);
+      }
+
+      /* ===== BLACK HOLE CENTER ===== */
+
+      .black-hole-container {
+        position: absolute;
+        left: 50%;
+        top: 46%;
+        transform: translate(-50%, -50%);
+        width: 300px;
+        height: 300px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+
+      .black-hole {
+        position: relative;
+        width: 200px;
+        height: 200px;
+        border-radius: 50%;
+        background: radial-gradient(circle at 40% 40%, #1a0a2e, #0a0212 60%, #020205 100%);
+        box-shadow:
+          0 0 60px 20px rgba(107, 75, 255, 0.18),
+          0 0 120px 40px rgba(0, 0, 0, 0.6),
+          0 0 180px 60px rgba(0, 240, 255, 0.06),
+          0 0 240px 80px rgba(107, 75, 255, 0.04);
+        animation: spin 10s linear infinite, blackHoleGlow 4s ease-in-out infinite;
+        transition: animation-duration 0.3s ease;
+      }
+
+      /* Event horizon */
+      .black-hole::before {
+        content: '';
+        position: absolute;
+        inset: 24px;
+        border-radius: 50%;
+        background: radial-gradient(circle at center, #000000 0%, #0a0212 40%, #1a0a2e 100%);
+        box-shadow: inset 0 0 40px 12px rgba(0, 0, 0, 0.9), inset 0 0 80px 20px rgba(107, 75, 255, 0.12);
+      }
+
+      /* Inner glow */
+      .black-hole::after {
+        content: '';
+        position: absolute;
+        inset: 8px;
+        border-radius: 50%;
+        background: radial-gradient(circle at center, transparent 30%, rgba(0, 240, 255, 0.03) 60%, transparent 80%);
+        animation: blackHoleGlow 3s ease-in-out infinite reverse;
+      }
+
+      /* Accretion ring */
+      .accretion-ring {
+        position: absolute;
+        width: 260px;
+        height: 70px;
+        border: 2px solid rgba(0, 240, 255, 0.25);
+        border-radius: 50%;
+        transform: rotateX(75deg) rotateZ(15deg);
+        box-shadow:
+          0 0 12px rgba(0, 240, 255, 0.18),
+          0 0 24px rgba(0, 240, 255, 0.08),
+          inset 0 0 8px rgba(0, 240, 255, 0.1);
+        animation: accretionRing 8s linear infinite;
+        pointer-events: none;
+      }
+
+      .accretion-ring::before {
+        content: '';
+        position: absolute;
+        inset: -6px;
+        border: 1px solid rgba(107, 75, 255, 0.12);
+        border-radius: 50%;
+      }
+
+      /* Particle dots */
+      .particle {
+        position: absolute;
+        width: 3px;
+        height: 3px;
+        border-radius: 50%;
+        background: var(--cyan);
+        box-shadow: 0 0 6px var(--cyan), 0 0 12px rgba(0, 240, 255, 0.3);
+        pointer-events: none;
+      }
+
+      .particle:nth-child(1) { animation: orbit 3s linear infinite; }
+      .particle:nth-child(2) { animation: orbit 4s linear infinite 0.5s; width: 2px; height: 2px; opacity: 0.7; }
+      .particle:nth-child(3) { animation: orbit 3.5s linear infinite 1s; width: 2.5px; height: 2.5px; opacity: 0.85; }
+      .particle:nth-child(4) { animation: orbit 5s linear infinite 1.5s; width: 2px; height: 2px; opacity: 0.6; background: var(--purple); box-shadow: 0 0 6px var(--purple); }
+      .particle:nth-child(5) { animation: orbit 3.2s linear infinite 2s; opacity: 0.75; }
+      .particle:nth-child(6) { animation: orbit 4.5s linear infinite 0.8s; width: 1.5px; height: 1.5px; opacity: 0.5; }
+      .particle:nth-child(7) { animation: orbit 3.8s linear infinite 2.5s; background: var(--purple); box-shadow: 0 0 6px var(--purple); }
+      .particle:nth-child(8) { animation: orbit 5.5s linear infinite 1.2s; width: 2px; height: 2px; opacity: 0.55; }
+
+      /* ===== TEXT LAYERS OVER BLACK HOLE ===== */
+
+      #true-name-display,
+      #true-name-lore {
+        position: absolute;
+        left: 50%;
+        top: 46%;
+        transform: translate(-50%, -50%);
+        text-align: center;
+        pointer-events: none;
+        z-index: 10;
+        transition: opacity 0.5s ease, transform 0.5s ease;
+      }
+
+      #true-name-display {
+        opacity: 0;
+        font-size: clamp(20px, 4vw, 36px);
+        letter-spacing: 0.2em;
+        color: #eafcff;
+        text-shadow: 0 0 20px var(--cyan), 0 0 40px rgba(0, 240, 255, 0.25);
+        white-space: nowrap;
+      }
+
+      #true-name-display.revealed {
+        opacity: 1;
+        pointer-events: auto;
+        cursor: pointer;
+        transition: opacity 2s ease;
+      }
+
+      #true-name-display.dissolving {
+        opacity: 0;
+        transform: translate(-50%, -50%) scale(1.1);
+      }
+
+      #true-name-lore {
+        opacity: 0;
+        max-width: 520px;
+        width: 90vw;
+        font-size: clamp(13px, 2vw, 16px);
+        line-height: 2;
+        color: rgba(234, 252, 255, 0.72);
+        text-shadow: 0 0 8px rgba(234, 252, 255, 0.12);
+        white-space: pre-line;
+      }
+
+      #true-name-lore.revealed {
+        opacity: 1;
+        transition: opacity 1.5s ease;
+      }
+
+      #true-name-lore.dissolving {
+        opacity: 0;
+        transform: translate(-50%, calc(-50% - 20px));
+      }
+
+      /* ===== DRAW BUTTON ===== */
+
+      #draw-btn {
+        position: absolute;
+        left: 50%;
+        top: calc(46% + 180px);
+        transform: translateX(-50%);
+        z-index: 20;
+        appearance: none;
+        -webkit-appearance: none;
+        border: 0;
+        outline: none;
+        border-radius: 18px;
+        padding: 16px 32px;
+        cursor: pointer;
+        color: #dffcff;
+        background: rgba(0, 240, 255, 0.08);
+        backdrop-filter: blur(14px);
+        -webkit-backdrop-filter: blur(14px);
+        border: 1px solid rgba(0, 240, 255, 0.2);
+        box-shadow:
+          0 8px 32px 0 rgba(0, 0, 0, 0.5),
+          0 0 24px rgba(0, 240, 255, 0.12),
+          inset 0 1px 0 rgba(255, 255, 255, 0.08);
+        text-shadow: 0 0 14px rgba(0, 240, 255, 0.55);
+        transition: all 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+        font-size: clamp(13px, 1.6vw, 15px);
+        letter-spacing: 0.1em;
+        white-space: nowrap;
+        animation: btnPulse 3s ease-in-out infinite;
+      }
+
+      #draw-btn:hover {
+        transform: translateX(-50%) translateY(-2px);
+        background: rgba(0, 240, 255, 0.14);
+        box-shadow:
+          0 12px 40px rgba(0, 0, 0, 0.55),
+          0 0 36px rgba(0, 240, 255, 0.22),
+          inset 0 1px 0 rgba(255, 255, 255, 0.1);
+      }
+
+      #draw-btn:active {
+        transform: translateX(-50%) scale(0.97);
+      }
+
+      #draw-btn.shaking {
+        animation: errorShake 0.5s ease-in-out;
+        border-color: rgba(255, 80, 80, 0.4);
+        background: rgba(255, 80, 80, 0.1);
+        box-shadow:
+          0 8px 32px 0 rgba(0, 0, 0, 0.5),
+          0 0 24px rgba(255, 80, 80, 0.18);
+        text-shadow: 0 0 14px rgba(255, 80, 80, 0.55);
+      }
+
+      #draw-btn.hidden {
+        opacity: 0;
+        pointer-events: none;
+      }
+
+      /* ===== ERROR MESSAGE ===== */
+
+      .error-msg {
+        position: absolute;
+        left: 50%;
+        top: calc(46% + 240px);
+        transform: translateX(-50%);
+        z-index: 20;
+        padding: 8px 18px;
+        border-radius: 12px;
+        background: rgba(255, 80, 80, 0.12);
+        border: 1px solid rgba(255, 80, 80, 0.25);
+        color: rgba(255, 180, 180, 0.9);
+        font-size: 13px;
+        letter-spacing: 0.06em;
+        text-shadow: 0 0 8px rgba(255, 80, 80, 0.2);
+        opacity: 0;
+        pointer-events: none;
+        transition: opacity 0.3s ease;
+      }
+
+      .error-msg.visible {
+        opacity: 1;
+      }
+
+      /* ===== SHAKE CONTAINER ===== */
+
+      .black-hole-container.shaking {
+        animation: screenShake 0.6s ease-in-out;
+      }
+
+      /* ===== KEYFRAMES ===== */
+
+      @keyframes spin {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
+      }
+
+      @keyframes blackHoleGlow {
+        0%, 100% {
+          box-shadow:
+            0 0 60px 20px rgba(107, 75, 255, 0.18),
+            0 0 120px 40px rgba(0, 0, 0, 0.6),
+            0 0 180px 60px rgba(0, 240, 255, 0.06),
+            0 0 240px 80px rgba(107, 75, 255, 0.04);
+        }
+        50% {
+          box-shadow:
+            0 0 70px 24px rgba(107, 75, 255, 0.24),
+            0 0 140px 48px rgba(0, 0, 0, 0.65),
+            0 0 200px 68px rgba(0, 240, 255, 0.08),
+            0 0 260px 90px rgba(107, 75, 255, 0.06);
+        }
+      }
+
+      @keyframes orbit {
+        0% { transform: rotate(0deg) translateX(130px) rotate(0deg); opacity: 0; }
+        10% { opacity: 1; }
+        90% { opacity: 1; }
+        100% { transform: rotate(360deg) translateX(130px) rotate(-360deg); opacity: 0; }
+      }
+
+      @keyframes screenShake {
+        0% { transform: translate(-50%, -50%); }
+        10% { transform: translate(calc(-50% + 3px), calc(-50% - 2px)); }
+        20% { transform: translate(calc(-50% - 2px), calc(-50% + 4px)); }
+        30% { transform: translate(calc(-50% + 4px), calc(-50% + 1px)); }
+        40% { transform: translate(calc(-50% - 3px), calc(-50% - 3px)); }
+        50% { transform: translate(calc(-50% + 2px), calc(-50% + 3px)); }
+        60% { transform: translate(calc(-50% - 4px), calc(-50% - 1px)); }
+        70% { transform: translate(calc(-50% + 1px), calc(-50% + 2px)); }
+        80% { transform: translate(calc(-50% - 2px), calc(-50% - 4px)); }
+        90% { transform: translate(calc(-50% + 3px), calc(-50% + 1px)); }
+        100% { transform: translate(-50%, -50%); }
+      }
+
+      @keyframes accretionRing {
+        0% { transform: rotateX(75deg) rotateZ(15deg); }
+        100% { transform: rotateX(75deg) rotateZ(375deg); }
+      }
+
+      @keyframes btnPulse {
+        0%, 100% {
+          box-shadow:
+            0 8px 32px 0 rgba(0, 0, 0, 0.5),
+            0 0 24px rgba(0, 240, 255, 0.12),
+            inset 0 1px 0 rgba(255, 255, 255, 0.08);
+        }
+        50% {
+          box-shadow:
+            0 8px 32px 0 rgba(0, 0, 0, 0.5),
+            0 0 32px rgba(0, 240, 255, 0.2),
+            0 0 48px rgba(0, 240, 255, 0.06),
+            inset 0 1px 0 rgba(255, 255, 255, 0.1);
+        }
+      }
+
+      @keyframes errorShake {
+        0%, 100% { transform: translateX(-50%) rotate(0); }
+        15% { transform: translateX(calc(-50% - 6px)) rotate(-2deg); }
+        30% { transform: translateX(calc(-50% + 5px)) rotate(1.5deg); }
+        45% { transform: translateX(calc(-50% - 4px)) rotate(-1deg); }
+        60% { transform: translateX(calc(-50% + 3px)) rotate(0.5deg); }
+        75% { transform: translateX(calc(-50% - 2px)) rotate(0); }
+      }
+
+      @keyframes particleFade {
+        0% { opacity: 1; transform: scale(1); }
+        100% { opacity: 0; transform: scale(0) translateY(-30px); }
+      }
+
+      @keyframes driftStars {
+        0% { transform: translate3d(0, 0, 0) scale(1); }
+        50% { transform: translate3d(1.2%, -0.8%, 0) scale(1.02); }
+        100% { transform: translate3d(0, 0, 0) scale(1); }
+      }
+
+      /* Lore dissolve particles */
+      .lore-particle {
+        position: fixed;
+        width: 4px;
+        height: 4px;
+        border-radius: 50%;
+        background: var(--cyan);
+        box-shadow: 0 0 8px var(--cyan);
+        pointer-events: none;
+        z-index: 100;
+        animation: particleFade 1.2s ease-out forwards;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="shell" id="shell">
+      <!-- Back button -->
+      <a class="back-btn" href="./memorial-wall.html">&#x2190; 返回商铺</a>
+
+      <!-- Stardust HUD -->
+      <div class="stardust-hud">
+        <span class="hud-tag">真名刻印</span>
+        <span class="hud-balance">&#x2726; <span id="hud-balance">0</span></span>
+      </div>
+
+      <!-- Black hole -->
+      <div class="black-hole-container" id="bh-container">
+        <div class="black-hole" id="black-hole"></div>
+        <div class="accretion-ring"></div>
+        <div class="particle"></div>
+        <div class="particle"></div>
+        <div class="particle"></div>
+        <div class="particle"></div>
+        <div class="particle"></div>
+        <div class="particle"></div>
+        <div class="particle"></div>
+        <div class="particle"></div>
+      </div>
+
+      <!-- Text layers -->
+      <div id="true-name-display"></div>
+      <div id="true-name-lore"></div>
+
+      <!-- Draw button -->
+      <button id="draw-btn" type="button">&#x2726; 献祭100星尘，窥探真名 &#x2726;</button>
+
+      <!-- Error message -->
+      <div class="error-msg" id="error-msg">星尘不足，无法触及深渊...</div>
+    </div>
+
+    <script src="./js/global-reset.js"></script>
+    <script src="./js/EconomyManager.js"></script>
+    <script>
+      window.GlobalReset?.mount?.();
+
+      const GRIMOIRE = [
+        { name: "愚者 (The Fool)", lore: "你从虚无中迈出第一步，\n不是因为你看见了路，\n而是因为你相信脚下会有路。\n群星沉默，不为你的愚蠢，\n为你的勇气。" },
+        { name: "错误 (Error)", lore: "世界是一行被写错的代码，\n你是那个不肯回退的光标。\n在所有的可能性中，\n你选择了最痛的那一种——\n然后称之为命运。" },
+        { name: "永夜女神 (Evernight Goddess)", lore: "她是所有失眠者的守护神，\n在凌晨三点收留那些\n无法被白天理解的人。\n她的眼眸里没有黑暗，\n只有被折叠的光。" },
+        { name: "真实造物主 (True Creator)", lore: "你不是在创造，\n你只是在回忆——\n回忆那些被你遗忘在\n上一个宇宙中的形状。\n每一次心跳，都是一次复现。" },
+        { name: "门 (Door)", lore: "你以为你是推开的那一个，\n其实你一直站在门内。\n门外的人以为你在等待，\n门内的人以为你在离开，\n而你只是忘了自己就是门。" },
+        { name: "白塔 (White Tower)", lore: "塔身没有入口，\n因为它从来不是用来进入的。\n它是用来仰望的——\n直到你的脖子酸痛，\n直到你承认自己的渺小。" },
+        { name: "黎明之剑 (Sword of the Morning)", lore: "这把剑不属于任何人，\n它只是在每个黎明时分\n短暂地选择一双手。\n被选中的人以为自己是英雄，\n剑只知道今天的阳光比昨天更冷。" },
+        { name: "渡鸦之影 (Shadow of the Raven)", lore: "它飞过所有战场却不参战，\n停在所有墓碑却不哀悼。\n它是一面黑色的镜子，\n照出每个自认为自由的人\n身后那条挣不断的锁链。" },
+        { name: "弑君者 (Kingslayer)", lore: "你杀死的不是国王，\n是你心中那个\n一直跪着的自己。\n王座空了之后你才发现，\n你根本不配坐上去。" },
+        { name: "哈斯金的幸存者 (Survivor of Hathsin)", lore: "你从灰烬中走出来，\n手里什么都没有，\n因为你已经把一切\n都留在了那场大火里。\n活下来，就是你的复仇。" },
+        { name: "白狼 (White Wolf)", lore: "雪地里唯一比雪更白的事物，\n不是另一个冬天的造物，\n而是一个拒绝被季节定义的魂魄。\n它不嗥叫，因为沉默\n是猎手最后的优雅。" },
+        { name: "红空之主 (Lord of the Red Sky)", lore: "天空被烧穿了一个洞，\n他站在洞口往里看，\n看见的不是地狱，\n是所有不敢抬头的人\n脸上的倒影。" },
+        { name: "深渊凝视者 (Abyss Gazer)", lore: "你盯着深渊看了太久，\n久到深渊开始觉得尴尬。\n它转身离去之前低声说：\n'你不是在看我，\n你是在看我不敢看自己的那部分。'" },
+        { name: "骨玫瑰 (Marrow Rose)", lore: "它不开在土壤里，\n开在你以为早已死去的\n某段记忆的骨髓中。\n你闻到它的香气时，\n其实是在闻自己腐烂的过去。" },
+        { name: "光之钥 (Key of Light)", lore: "它不能打开任何东西，\n它的存在只是为了证明：\n在所有锁住的门背后，\n光比黑暗更早到达，\n只是你一直闭着眼睛。" },
+        { name: "荒野之王 (King of the Wilds)", lore: "他没有臣民，没有王座，\n没有一面旗帜写着他统治的范围。\n他的王国是所有未被命名的地方，\n他的加冕仪式是\n每一场无人见证的日出。" },
+        { name: "时空旅者 (Time Traveler)", lore: "你回到了过去，\n却发现那里的人\n比你记忆中活得更好。\n这不是时间旅行，\n这是你欠自己的道歉。" },
+        { name: "灰烬使者 (Ashbringer)", lore: "你不制造灰烬，\n你只是灰烬的翻译官——\n把每一段燃烧过的故事\n译成那些迟到者\n能读懂的沉默。" },
+        { name: "星之织者 (Weaver of Stars)", lore: "每一颗你以为偶然看到的星，\n都是被一根看不见的线\n缝在了你刚好需要的位置。\n织者不认识你，\n但她一直在等你抬头。" },
+        { name: "无名者 (The Nameless One)", lore: "你没有名字不是因为被遗忘，\n而是因为你拒绝\n被任何一个词定义。\n你选择了比存在更远的地方——\n那里连'无'都显得多余。" }
+      ];
+
+      // State machine
+      const STATE = { IDLE: 0, MANIFESTATION: 1, LORE_REVEAL: 2, RESET: 3 };
+      let currentState = STATE.IDLE;
+      let currentEntry = null;
+
+      // DOM refs
+      const blackHole = document.getElementById('black-hole');
+      const bhContainer = document.getElementById('bh-container');
+      const drawBtn = document.getElementById('draw-btn');
+      const errorMsg = document.getElementById('error-msg');
+      const trueNameDisplay = document.getElementById('true-name-display');
+      const trueNameLore = document.getElementById('true-name-lore');
+      const hudBalance = document.getElementById('hud-balance');
+      const shell = document.getElementById('shell');
+
+      // Sync HUD
+      function syncHUD() {
+        const balance = EconomyManager.getBalance();
+        hudBalance.textContent = balance;
+      }
+
+      syncHUD();
+      EconomyManager.onChange(syncHUD);
+
+      // Draw button click
+      drawBtn.addEventListener('click', () => {
+        if (currentState !== STATE.IDLE) return;
+
+        if (!EconomyManager.canAfford(100)) {
+          // Insufficient: shake + error
+          drawBtn.classList.add('shaking');
+          errorMsg.classList.add('visible');
+          setTimeout(() => {
+            drawBtn.classList.remove('shaking');
+            errorMsg.classList.remove('visible');
+          }, 1200);
+          return;
+        }
+
+        // Spend and go to manifestation
+        EconomyManager.spendStardust(100);
+        syncHUD();
+        enterManifestation();
+      });
+
+      function enterManifestation() {
+        currentState = STATE.MANIFESTATION;
+
+        // Hide button
+        drawBtn.classList.add('hidden');
+
+        // Accelerate black hole
+        blackHole.style.animationDuration = '1s, 0.8s';
+
+        // Screen shake
+        bhContainer.classList.add('shaking');
+
+        // Pick random entry
+        currentEntry = GRIMOIRE[Math.floor(Math.random() * GRIMOIRE.length)];
+
+        // After 1.5s: reveal name
+        setTimeout(() => {
+          bhContainer.classList.remove('shaking');
+          trueNameDisplay.textContent = currentEntry.name;
+          trueNameDisplay.classList.add('revealed');
+          trueNameDisplay.classList.remove('dissolving');
+
+          // Bind click for lore reveal
+          trueNameDisplay.onclick = () => {
+            if (currentState !== STATE.MANIFESTATION) return;
+            enterLoreReveal();
+          };
+        }, 1500);
+      }
+
+      function enterLoreReveal() {
+        currentState = STATE.LORE_REVEAL;
+
+        // Dissolve name
+        trueNameDisplay.classList.remove('revealed');
+        trueNameDisplay.classList.add('dissolving');
+
+        // Spawn particles at name position
+        spawnLoreParticles();
+
+        // After 0.5s: reveal lore
+        setTimeout(() => {
+          trueNameLore.textContent = currentEntry.lore;
+          trueNameLore.classList.add('revealed');
+          trueNameLore.classList.remove('dissolving');
+
+          // Listen for document click to reset
+          document.addEventListener('click', handleResetClick);
+        }, 500);
+      }
+
+      function handleResetClick(e) {
+        // Don't trigger if clicking lore text itself
+        if (trueNameLore.contains(e.target)) return;
+
+        currentState = STATE.RESET;
+        document.removeEventListener('click', handleResetClick);
+
+        // Dissolve lore
+        trueNameLore.classList.remove('revealed');
+        trueNameLore.classList.add('dissolving');
+
+        // After fade completes, reset everything
+        setTimeout(() => {
+          resetToIdle();
+        }, 600);
+      }
+
+      function resetToIdle() {
+        currentState = STATE.IDLE;
+
+        // Reset text layers
+        trueNameDisplay.classList.remove('revealed', 'dissolving');
+        trueNameDisplay.textContent = '';
+        trueNameDisplay.onclick = null;
+
+        trueNameLore.classList.remove('revealed', 'dissolving');
+        trueNameLore.textContent = '';
+
+        // Show button again
+        drawBtn.classList.remove('hidden');
+
+        // Slow black hole back down
+        blackHole.style.animationDuration = '';
+
+        // Clear shake
+        bhContainer.classList.remove('shaking');
+      }
+
+      function spawnLoreParticles() {
+        const rect = trueNameDisplay.getBoundingClientRect();
+        const cx = rect.left + rect.width / 2;
+        const cy = rect.top + rect.height / 2;
+
+        for (let i = 0; i < 16; i++) {
+          const p = document.createElement('div');
+          p.className = 'lore-particle';
+          const angle = (Math.PI * 2 * i) / 16;
+          const dist = 30 + Math.random() * 60;
+          const x = cx + Math.cos(angle) * dist;
+          const y = cy + Math.sin(angle) * dist;
+          p.style.left = `${x}px`;
+          p.style.top = `${y}px`;
+          p.style.animationDelay = `${Math.random() * 0.4}s`;
+          p.style.width = `${2 + Math.random() * 3}px`;
+          p.style.height = p.style.width;
+          if (Math.random() > 0.5) {
+            p.style.background = 'var(--purple)';
+            p.style.boxShadow = '0 0 8px var(--purple)';
+          }
+          document.body.appendChild(p);
+          setTimeout(() => p.remove(), 1600);
+        }
+      }
+    </script>
+  </body>
+</html>

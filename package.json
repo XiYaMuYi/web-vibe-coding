@@ -1,0 +1,14 @@
+{
+  "name": "surprise-vibe-coding",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Interactive narrative experience with Vercel Serverless memorial wall",
+  "scripts": {
+    "start": "vercel dev"
+  },
+  "dependencies": {
+    "ali-oss": "^6.23.0",
+    "dotenv": "^17.4.2",
+    "pg": "^8.20.0"
+  }
+}

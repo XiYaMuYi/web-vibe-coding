@@ -4,6 +4,10 @@ const AudioManager = (() => {
   let audioContext = null;
   let unlockListenerAttached = false;
 
+  function clampVolume(value) {
+    return Math.max(0, Math.min(1, value));
+  }
+
   function getAudio(src) {
     if (!src) return null;
     if (audioMap.has(src)) return audioMap.get(src);
@@ -84,8 +88,8 @@ const AudioManager = (() => {
     return new Promise((resolve) => {
       const tick = (now) => {
         const p = Math.min(1, (now - start) / duration);
-        if (current) current.volume = Math.max(0, 1 - p);
-        next.volume = Math.min(1, p);
+        if (current) current.volume = clampVolume(1 - p);
+        next.volume = clampVolume(p);
         if (p < 1) {
           requestAnimationFrame(tick);
         } else {

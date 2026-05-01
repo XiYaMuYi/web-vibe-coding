@@ -26,3 +26,17 @@ ENV/
 # Local env
 .env
 .env.*
+.vercel
+.env*.local
+
+# Claude AI Agent prompts (development artifacts, not source code)
+.claude-prompt.txt
+
+# One-off debugging / seeding / test scripts
+.fix-bounty.js
+.fix-bounty-submit.js
+.seed-bounty.js
+.test-bounty.js
+
+# Deprecated code
+_deprecated_v1/

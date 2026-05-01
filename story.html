@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <meta name="theme-color" content="#050816" />
+    <title>Surprise Vibe Coding</title>
+    <link rel="stylesheet" href="./css/base.css" />
+    <link rel="stylesheet" href="./css/effects.css" />
+    <link rel="stylesheet" href="./css/cinematic.css" />
+  </head>
+  <body>
+    <div id="bg-layer" style="position:fixed; width:100vw; height:100vh; z-index:1;"></div>
+    <canvas id="fx-canvas" style="position:fixed; width:100vw; height:100vh; z-index:2; pointer-events:none;"></canvas>
+
+    <div id="stardust-hud" style="position:fixed; top:30px; right:40px; z-index:100;">
+      ✦ <span id="stardust-val">0</span>
+    </div>
+
+    <div id="cinematic-dialog" style="position:fixed; bottom:5%; left:50%; transform:translateX(-50%); width:70%; max-width:1200px; z-index:50;">
+      <h1 id="story-title"></h1>
+      <p id="story-text"></p>
+      <div id="action-area"></div>
+    </div>
+
+    <script src="./js/EconomyManager.js"></script>
+    <script src="./js/Interaction.js"></script>
+    <script src="./js/FxEngine.js"></script>
+    <script src="./js/Navigator.js"></script>
+    <script src="./js/Renderer.js"></script>
+    <script src="./js/DeviceManager.js"></script>
+    <script src="./js/Debugger.js"></script>
+    <script src="./js/app.js"></script>
+    <script>
+      window.addEventListener('DOMContentLoaded', () => {
+        window.AppController?.boot?.().catch((error) => console.error(error));
+      });
+    </script>
+  </body>
+</html>

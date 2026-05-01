@@ -68,11 +68,24 @@ const AppController = (() => {
   }
 
   function bindOptionButtons() {
-    document.getElementById('optionList')?.addEventListener('click', (event) => {
+    document.getElementById('action-area')?.addEventListener('click', (event) => {
       const button = event.target.closest('button[data-to]');
       if (!button || button.disabled) return;
       const to = button.dataset.to;
       const setFlags = button.dataset.setFlags ? JSON.parse(button.dataset.setFlags) : null;
+      const currentNodeId = window.StoryRenderer?.getCurrentNodeId?.();
+      if (currentNodeId === 'node_004' && to === 'node_004') {
+        const balance = window.EconomyManager?.getBalance?.() ?? Number(localStorage.getItem('stardust_balance') || 0);
+        localStorage.setItem('stardust_balance', String(balance));
+        document.body.classList.add('screen-flash');
+        document.body.classList.add('scene-transition');
+        const app = document.getElementById('app');
+        if (app) app.classList.add('scene-transition');
+        window.setTimeout(() => {
+          window.location.href = `./memorial-wall.html?balance=${encodeURIComponent(balance)}`;
+        }, 850);
+        return;
+      }
       window.Navigator?.goTo?.(to, setFlags ? { setFlags } : null);
     });
   }
@@ -109,7 +122,36 @@ const AppController = (() => {
   }
 
   function isOptionClick(target) {
-    return !!target?.closest?.('#optionList button');
+    return !!target?.closest?.('#action-area button');
+  }
+
+  function forceMemorialWall() {
+    const app = document.getElementById('app');
+    const stage = document.getElementById('stage');
+    const modal = document.getElementById('cameraModal');
+    window.InteractionController?.unbind?.();
+    window.AudioManager?.stopAll?.();
+    window.Debugger?.setEnabled?.(false);
+    window.Navigator?.unbindCurrent?.();
+    if (app) {
+      app.classList.remove('system-override', 'glitching', 'color-split');
+      app.innerHTML = '';
+    }
+    if (stage) {
+      stage.innerHTML = '';
+      const wallRoot = document.createElement('div');
+      wallRoot.id = 'memorialWallRoot';
+      wallRoot.className = 'memorial-wall-root';
+      stage.appendChild(wallRoot);
+      window.MemorialWall?.mount?.(wallRoot);
+    }
+    if (modal) modal.classList.add('hidden');
+  }
+
+  function bindDebugWallButton() {
+    const button = document.getElementById('debug-wall-btn');
+    if (!button) return;
+    button.addEventListener('click', forceMemorialWall);
   }
 
   function bindHiddenEgg() {
@@ -163,10 +205,45 @@ const AppController = (() => {
     window.DeviceManager?.init?.();
     window.FxEngine?.init?.();
 
+    const hudValue = document.getElementById('stardust-val');
+    const hud = document.getElementById('stardust-hud');
+    if (window.EconomyManager) {
+      const syncHud = (balance) => {
+        if (hudValue) hudValue.textContent = String(balance ?? window.EconomyManager.getBalance?.() ?? 0);
+        if (hud) {
+          hud.classList.add('is-boosting');
+          window.setTimeout(() => hud.classList.remove('is-boosting'), 300);
+        }
+      };
+      syncHud(window.EconomyManager.getBalance?.() ?? 0);
+      window.EconomyManager.onChange?.(syncHud);
+    }
+
+    window.InteractionController?.on?.('INTERACTION_SUCCESS', (payload) => {
+      const reward = Number(payload?.interaction?.rewardStardust || payload?.interaction?.reward || 0) || 0;
+      if (reward > 0) {
+        window.EconomyManager?.addStardust?.(reward);
+        window.FxEngine?.play?.('interaction-success', payload);
+        spawnFloatingStardust(reward, payload);
+      }
+      const toast = document.getElementById('scene-toast');
+      if (toast) {
+        toast.textContent = '任务完成，跃迁校准中...';
+        toast.classList.remove('is-visible');
+        void toast.offsetWidth;
+        toast.classList.add('is-visible');
+      }
+      if (payload?.nextId) {
+        window.StoryRenderer?.scheduleSceneTransition?.(payload.nextId);
+      }
+    });
+
     const story = await window.StoryRenderer?.boot?.();
     window.Navigator?.init?.(story);
+    window.Debugger?.init?.();
     bindOptionButtons();
     bindHiddenEgg();
+    bindDebugWallButton();
 
     const startNode = story?.meta?.startNode ?? 'node_000';
     window.Navigator?.goTo?.(startNode);
@@ -180,7 +257,19 @@ const AppController = (() => {
     });
   }
 
-  return { boot, showCameraModal, hideCameraModal };
+  function spawnFloatingStardust(amount, payload = {}) {
+    const fx = document.createElement('div');
+    fx.className = 'floating-stardust';
+    fx.textContent = `+${amount} ✦`;
+    const x = Number(payload.clientX ?? payload.x ?? window.innerWidth / 2);
+    const y = Number(payload.clientY ?? payload.y ?? window.innerHeight / 2);
+    fx.style.left = `${x}px`;
+    fx.style.top = `${y}px`;
+    document.body.appendChild(fx);
+    fx.addEventListener('animationend', () => fx.remove(), { once: true });
+  }
+
+  return { boot, showCameraModal, hideCameraModal, forceMemorialWall };
 })();
 
 window.AppController = AppController;

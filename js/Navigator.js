@@ -52,10 +52,26 @@ const Navigator = (() => {
     Object.assign(state.flags, setFlags);
   }
 
+  function applyEconomy(node) {
+    if (!node) return true;
+    if (Number(node.rewardStardust || 0) > 0) {
+      window.EconomyManager?.addStardust?.(node.rewardStardust);
+    }
+    const cost = Number(node.costStardust || 0);
+    if (cost > 0) {
+      if (!window.EconomyManager?.spendStardust?.(cost)) {
+        window.Debugger?.log?.('星辰不足，无法进入该节点。');
+        return false;
+      }
+    }
+    return true;
+  }
+
   function goTo(nodeId, mutations = null) {
     const node = getNode(nodeId);
     if (!node) return false;
 
+    if (!applyEconomy(node)) return false;
     unbindCurrent();
     if (mutations?.setFlags) applyMutations(mutations.setFlags);
     if (node.interaction?.setFlags) applyMutations(node.interaction.setFlags);
@@ -91,6 +107,7 @@ const Navigator = (() => {
     window.StoryRenderer?.renderNode?.(prev);
     const node = getNode(prev);
     if (node?.audio?.bgm) window.AudioManager?.fadeBGM?.(node.audio.bgm);
+    if (!applyEconomy(node)) return false;
     const nextUnbind = window.InteractionController?.bind?.(node?.interaction, (nextId) => {
       const fallback = node?.interaction?.successTo || node?.options?.[0]?.to;
       goTo(nextId || fallback);

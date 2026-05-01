@@ -7,9 +7,9 @@
   "nodes": {
     "node_000": {
       "id": "node_000",
-      "title": "序章 · 进入回声舱",
+      "title": "坐标确认：星辰典当行",
       "layout": "fullscreen-cinematic",
-      "text": "当你按下开始键，空间会先安静一秒。然后，故事将像呼吸一样慢慢展开。长按封面三秒，唤醒第一段记忆。",
+      "text": "欢迎来到系统之外的隐秘裂隙——星辰典当行。\n\n在这里，庸俗的货币失去意义。你需要通过长按来注入意念，凝结出深空中的唯一通货：「星辰」。\n\n用你积攒的星辰，可以去换取货架上那些封存在琉璃中的**「旅人身份卡」**——它们是平行宇宙中，其他灵魂留下的绝美记忆与自由回声。\n\n但请保持警惕。深空幽暗，若你的意志陷入沉寂（长时间无交互），潜伏在暗处的**“星际窃贼”**便会悄无声息地掠夺你的资产。\n\n保持专注，长按唤醒第一段记忆。",
       "background": {
         "image": "./image/Gemini_Generated_Image_c62rq0c62rq0c62r.png",
         "overlay": "linear-gradient(180deg, rgba(0,0,0,0.15), rgba(0,0,0,0.72))"
@@ -19,28 +19,24 @@
         "loop": true,
         "autoplay": false
       },
-      "options": [
-        {
-          "label": "启动长按仪式",
-          "to": "node_001",
-          "setFlags": { "sanity": 98 }
-        }
-      ],
+      "options": [],
+      "rewardStardust": 1000,
       "interaction": {
         "type": "hold",
         "targetMs": 1800,
         "successTo": "node_001",
-        "hint": "长按封面，唤醒第一段记忆",
-        "setFlags": { "sanity": 97 }
+        "hint": "长按或滑动唤醒第一段记忆",
+        "setFlags": { "sanity": 97 },
+        "rewardStardust": 1000
       }
     },
     "node_001": {
       "id": "node_001",
-      "title": "分歧 · 第一束光",
+      "title": "开采 · 记忆的矿脉",
       "layout": "character-dialogue",
-      "text": "你听见远处传来轻微的电流声。现在，必须选择是通过狂点打开门，还是拖拽校准坐标。",
+      "text": "离开回声舱，你只身步入了这片危机四伏的星尘裂隙。\n\n眼前漂浮的庞大陨石中，流淌着琥珀色的微光。那是昔日旅人们遗落的执念，历经岁月凝结而成的原始星辰矿脉。\n\n想要获取它们，轻柔的触碰毫无意义。你必须集中意念，用极高频率的冲击去击碎坚硬的外壳，剥离出那些闪耀的星辰碎晶。别停下，直到光芒迸发。",
       "background": {
-        "image": "https://cdn.example.com/story/bg-001.jpg",
+        "image": "./image/2.jpg",
         "overlay": "linear-gradient(180deg, rgba(2,6,23,0.18), rgba(2,6,23,0.82))"
       },
       "audio": {
@@ -48,29 +44,12 @@
         "loop": true,
         "autoplay": false
       },
-      "options": [
-        {
-          "label": "进入狂点挑战",
-          "to": "node_002",
-          "requires": { "flag": "has_key", "value": true },
-          "setFlags": { "sanity": 94 }
-        },
-        {
-          "label": "选择拖拽路径",
-          "to": "node_003",
-          "setFlags": { "sanity": 93 }
-        },
-        {
-          "label": "拾取钥匙残片",
-          "to": "node_001",
-          "setFlags": { "has_key": true }
-        }
-      ],
+      "options": [],
       "interaction": {
         "type": "mash",
-        "targetCount": 24,
+        "targetCount": 10,
         "successTo": "node_002",
-        "hint": "连续点击点亮线路",
+        "hint": "持续狂点 · 开采星辰矿脉",
         "setFlags": { "sanity": 90 }
       }
     },
@@ -79,8 +58,9 @@
       "title": "狂点 · 门锁过载",
       "layout": "terminal-override",
       "text": "你的指尖像雨点一样敲击面板，电路开始发热，门锁的指示灯疯狂闪烁。最后一道电弧被击穿了。",
+      "rewardStardust": 100,
       "background": {
-        "image": "https://cdn.example.com/story/bg-002.jpg",
+        "image": "./image/2.jpg",
         "overlay": "linear-gradient(180deg, rgba(15,23,42,0.12), rgba(15,23,42,0.82))"
       },
       "audio": {
@@ -97,19 +77,20 @@
       ],
       "interaction": {
         "type": "mash",
-        "targetCount": 32,
-        "successTo": "node_004",
-        "hint": "继续狂点，直到锁芯崩解",
+        "targetCount": 10,
+        "successTo": "node_003",
+        "hint": "持续狂点 · 开采星辰矿脉",
         "setFlags": { "sanity": 84 }
       }
     },
     "node_003": {
       "id": "node_003",
-      "title": "拖拽 · 坐标校准",
+      "title": "校准 · 跃迁星图",
       "layout": "character-dialogue",
-      "text": "你将视线对准悬浮罗盘，拖动那道光线，让它缓慢贴合中央轨迹。每一次微调，世界都在重新对焦。",
+      "text": "满载着原始的星辰碎晶，你来到了这扇沉睡了千万年的星空巨门前。\n\n门后，便是那个不受法则约束的隐秘集市。但空间的引力场已经紊乱，跃迁的坐标散落在虚空之中。\n\n凝神静气。用你的指尖牵引星光，将散落的节点重新连接。当古老的星图被再次点亮，真理的货架将为你敞开。",
+      "costStardust": 10,
       "background": {
-        "image": "https://cdn.example.com/story/bg-003.jpg",
+        "image": "./image/3.jpg",
         "overlay": "linear-gradient(180deg, rgba(2,8,23,0.10), rgba(2,8,23,0.86))"
       },
       "audio": {
@@ -117,28 +98,22 @@
         "loop": true,
         "autoplay": false
       },
-      "options": [
-        {
-          "label": "进入结局：坐标归位",
-          "to": "node_004",
-          "setFlags": { "sanity": 82 }
-        }
-      ],
+      "options": [],
       "interaction": {
-        "type": "drag",
-        "targetPercent": 85,
+        "type": "connect",
         "successTo": "node_004",
-        "hint": "滑动罗盘光标，贴近目标位置",
+        "hint": "拖拽鼠标：连接星辰节点，校准跃迁坐标",
+        "rewardStardust": 200,
         "setFlags": { "sanity": 80 }
       }
     },
     "node_004": {
       "id": "node_004",
-      "title": "终章 · 专属纪念身份卡",
+      "title": "终章 · 记忆的货架",
       "layout": "fullscreen-cinematic",
-      "text": "你已抵达终点。系统开始记录你的轮廓，并准备生成一张只属于你的身份卡。",
+      "text": "星门在你面前轰然洞开，隐秘的真理货架浮现在虚空之中。这里陈列着 34 块封存在琥珀中的「旅人身份卡」——它们是平行宇宙中其他灵魂留下的绝美回声。\n\n用你一路凝结的星辰，去兑换那张与你灵魂共鸣的卡牌吧。选定之后，签下你的真名，便可完成这场跨越星际的典当，升维进入永恒的星图。",
       "background": {
-        "image": "https://cdn.example.com/story/bg-004.jpg",
+        "image": "./image/4.jpg",
         "overlay": "linear-gradient(180deg, rgba(8,12,24,0.08), rgba(8,12,24,0.90))"
       },
       "audio": {
@@ -148,17 +123,10 @@
       },
       "options": [
         {
-          "label": "进入系统接管",
+          "label": "开启真理货架",
           "to": "node_004"
         }
-      ],
-      "interaction": {
-        "type": "hold",
-        "targetMs": 1200,
-        "successTo": "node_004",
-        "hint": "长按召唤纪念卡生成器",
-        "setFlags": { "sanity": 75 }
-      }
+      ]
     }
   }
 }

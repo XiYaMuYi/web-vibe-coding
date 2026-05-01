@@ -1,0 +1,906 @@
+﻿<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <meta name="theme-color" content="#020205" />
+    <title>Memorial Wall Portal</title>
+    <style>
+      :root {
+        color-scheme: dark;
+      }
+
+      html,
+      body {
+        margin: 0;
+        width: 100%;
+        height: 100%;
+        overflow: hidden;
+        background: #020205;
+        font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      }
+
+      body {
+        color: #eafcff;
+      }
+
+      .shell {
+        position: relative;
+        width: 100vw;
+        height: 100vh;
+        overflow: hidden;
+        background:
+          radial-gradient(circle at 50% 40%, rgba(26, 31, 46, 0.98) 0%, rgba(10, 14, 24, 0.96) 30%, rgba(4, 6, 12, 0.98) 56%, #020205 100%),
+          radial-gradient(circle at 20% 18%, rgba(0, 240, 255, 0.12), transparent 18%),
+          radial-gradient(circle at 78% 26%, rgba(107, 75, 255, 0.12), transparent 20%),
+          radial-gradient(circle at 50% 80%, rgba(255, 255, 255, 0.04), transparent 22%);
+      }
+
+      .shell::before,
+      .shell::after {
+        content: '';
+        position: absolute;
+        inset: -20%;
+        pointer-events: none;
+      }
+
+      .shell::before {
+        background:
+          radial-gradient(circle at 18% 28%, rgba(255, 255, 255, 0.09) 0 1px, transparent 1.5px),
+          radial-gradient(circle at 68% 16%, rgba(255, 255, 255, 0.07) 0 1px, transparent 1.5px),
+          radial-gradient(circle at 82% 72%, rgba(255, 255, 255, 0.08) 0 1px, transparent 1.5px),
+          radial-gradient(circle at 40% 74%, rgba(0, 240, 255, 0.08) 0 1px, transparent 1.7px),
+          radial-gradient(circle at 52% 48%, rgba(107, 75, 255, 0.08) 0 1px, transparent 1.8px);
+        opacity: 0.48;
+        filter: blur(0.2px);
+        animation: driftStars 26s linear infinite;
+      }
+
+      .shell::after {
+        background:
+          radial-gradient(circle at center, transparent 0 34%, rgba(0, 0, 0, 0.38) 60%, rgba(0, 0, 0, 0.72) 100%),
+          radial-gradient(circle at 50% 42%, rgba(0, 240, 255, 0.06), transparent 28%);
+        opacity: 1;
+      }
+
+      .global-reset-bar {
+        position: fixed;
+        right: 16px;
+        top: 16px;
+        z-index: 90;
+        display: flex;
+        gap: 10px;
+        flex-wrap: wrap;
+        align-items: center;
+      }
+
+      .global-reset-btn {
+        appearance: none;
+        -webkit-appearance: none;
+        border: 0;
+        outline: none;
+        border-radius: 14px;
+        padding: 10px 14px;
+        cursor: pointer;
+        color: #dffcff;
+        background: rgba(0, 240, 255, 0.08);
+        backdrop-filter: blur(12px);
+        -webkit-backdrop-filter: blur(12px);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.5), 0 0 18px rgba(0, 240, 255, 0.12);
+        text-shadow: 0 0 12px rgba(0, 240, 255, 0.55);
+        transition: all 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+      }
+
+      .global-reset-btn:hover {
+        transform: translateY(-1px);
+        background: rgba(0, 240, 255, 0.12);
+        box-shadow: 0 10px 40px rgba(0, 0, 0, 0.55), 0 0 28px rgba(0, 240, 255, 0.22);
+      }
+
+      .global-reset-tag {
+        padding: 8px 12px;
+        border-radius: 999px;
+        background: rgba(255, 255, 255, 0.05);
+        backdrop-filter: blur(12px);
+        -webkit-backdrop-filter: blur(12px);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.28);
+        color: rgba(234, 252, 255, 0.82);
+        font-size: 12px;
+        letter-spacing: 0.08em;
+      }
+
+      #market-overlay {
+        width: 90vw;
+        height: 85vh;
+        position: fixed;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        z-index: 100;
+        background: rgba(10, 15, 25, 0.85);
+        backdrop-filter: blur(24px);
+        -webkit-backdrop-filter: blur(24px);
+        border: 1px solid rgba(0, 240, 255, 0.15);
+        border-radius: 24px;
+        display: flex;
+        overflow: hidden;
+        box-shadow: 0 24px 72px rgba(0, 0, 0, 0.48), 0 0 90px rgba(0, 240, 255, 0.08);
+      }
+
+      .market-sidebar {
+        flex: 0 0 380px;
+        padding: 40px;
+        border-right: 1px solid rgba(255, 255, 255, 0.05);
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+        min-height: 0;
+      }
+
+      .sidebar-header {
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+      }
+
+      .market-title {
+        margin: 0;
+        font-size: clamp(22px, 2.4vw, 32px);
+        letter-spacing: 0.08em;
+        text-shadow: 0 0 14px rgba(0, 240, 255, 0.35), 0 0 26px rgba(0, 240, 255, 0.12);
+      }
+
+      .stardust-balance {
+        font-size: 14px;
+        color: rgba(223, 252, 255, 0.88);
+        letter-spacing: 0.1em;
+        text-shadow: 0 0 10px rgba(0, 240, 255, 0.2);
+      }
+
+      .sidebar-nav {
+        margin-top: 10px;
+        display: flex;
+        gap: 8px;
+        flex-wrap: wrap;
+      }
+
+      .sidebar-nav a {
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        padding: 6px 12px;
+        border-radius: 999px;
+        font-size: 12px;
+        letter-spacing: 0.08em;
+        color: rgba(0, 240, 255, 0.7);
+        background: rgba(0, 240, 255, 0.06);
+        border: 1px solid rgba(0, 240, 255, 0.15);
+        text-decoration: none;
+        transition: all 0.3s ease;
+      }
+
+      .sidebar-nav a:hover {
+        color: #dffcff;
+        background: rgba(0, 240, 255, 0.12);
+        border-color: rgba(0, 240, 255, 0.35);
+        box-shadow: 0 0 16px rgba(0, 240, 255, 0.15);
+      }
+
+      .avatar-preview {
+        width: 140px;
+        height: 140px;
+        border-radius: 50%;
+        overflow: hidden;
+        position: relative;
+        border: 1px solid rgba(255, 255, 255, 0.12);
+        box-shadow: 0 0 0 1px rgba(0, 240, 255, 0.08), 0 0 32px rgba(0, 240, 255, 0.12), inset 0 0 28px rgba(255, 255, 255, 0.08);
+        background: #020205;
+        flex-shrink: 0;
+        align-self: center;
+        margin: 8px auto;
+      }
+
+      .avatar-preview canvas,
+      .avatar-preview img {
+        width: 100%;
+        height: 100%;
+        display: block;
+        object-fit: cover;
+      }
+
+      .avatar-preview img {
+        position: absolute;
+        inset: 0;
+      }
+
+      .hint {
+        padding: 8px 12px;
+        border-radius: 12px;
+        background: rgba(255, 120, 120, 0.12);
+        border: 1px solid rgba(255, 120, 120, 0.25);
+        color: rgba(255, 180, 180, 0.9);
+        font-size: 12px;
+        line-height: 1.5;
+      }
+
+      .hint.is-hidden {
+        display: none;
+      }
+
+      .sidebar-footer {
+        margin-top: auto;
+        padding-top: 24px;
+        border-top: 1px solid rgba(255, 255, 255, 0.06);
+      }
+
+      .pawn-altar {
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+      }
+
+      .pawn-altar input[type="text"] {
+        width: 100%;
+        box-sizing: border-box;
+        border-radius: 14px;
+        padding: 14px 16px;
+        font-size: 15px;
+        color: #eafcff;
+        background: rgba(255, 255, 255, 0.05);
+        backdrop-filter: blur(12px);
+        -webkit-backdrop-filter: blur(12px);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.5);
+        outline: none;
+        text-shadow: 0 0 12px rgba(0, 240, 255, 0.16);
+      }
+
+      .pawn-altar input[type="text"]::placeholder {
+        color: rgba(234, 252, 255, 0.44);
+      }
+
+      .pawn-altar .btn-row {
+        display: flex;
+        gap: 10px;
+        flex-wrap: wrap;
+      }
+
+      .btn-glow {
+        appearance: none;
+        -webkit-appearance: none;
+        border: 0;
+        outline: none;
+        border-radius: 14px;
+        padding: 12px 16px;
+        cursor: pointer;
+        color: #dffcff;
+        background: rgba(0, 240, 255, 0.08);
+        backdrop-filter: blur(12px);
+        -webkit-backdrop-filter: blur(12px);
+        box-shadow:
+          0 8px 32px 0 rgba(0, 0, 0, 0.5),
+          0 0 18px rgba(0, 240, 255, 0.12),
+          inset 0 1px 0 rgba(255, 255, 255, 0.08);
+        text-shadow: 0 0 12px rgba(0, 240, 255, 0.55);
+        transition: all 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+        font-size: 13px;
+        letter-spacing: 0.06em;
+      }
+
+      .btn-glow:hover {
+        transform: translateY(-1px);
+        background: rgba(0, 240, 255, 0.12);
+        box-shadow:
+          0 10px 40px rgba(0, 0, 0, 0.55),
+          0 0 30px rgba(0, 240, 255, 0.22),
+          inset 0 1px 0 rgba(255, 255, 255, 0.1);
+      }
+
+      .btn-glow:active {
+        transform: scale(0.98);
+      }
+
+      .btn-glow.submit-primary {
+        background: linear-gradient(135deg, rgba(0, 240, 255, 0.22), rgba(107, 75, 255, 0.28));
+        box-shadow: 0 12px 34px rgba(0, 240, 255, 0.18), 0 0 34px rgba(107, 75, 255, 0.12);
+      }
+
+      .btn-glow.submit-primary:hover {
+        box-shadow: 0 16px 44px rgba(0, 240, 255, 0.26), 0 0 42px rgba(0, 240, 255, 0.18);
+      }
+
+      .market-main {
+        flex: 1;
+        padding: 40px;
+        overflow-y: auto;
+        min-height: 0;
+      }
+
+      .market-main::-webkit-scrollbar {
+        width: 10px;
+      }
+
+      .market-main::-webkit-scrollbar-track {
+        background: rgba(255, 255, 255, 0.03);
+      }
+
+      .market-main::-webkit-scrollbar-thumb {
+        background: rgba(0, 240, 255, 0.22);
+        border-radius: 999px;
+      }
+
+      #commodity-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+        gap: 28px;
+        align-items: start;
+      }
+
+      .market-card {
+        border-radius: 16px;
+        background: rgba(255, 255, 255, 0.03);
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        transition: all 0.3s ease;
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+      }
+
+      .market-card:hover {
+        transform: translateY(-8px);
+        box-shadow: 0 12px 30px rgba(0, 240, 255, 0.2);
+        border-color: rgba(0, 240, 255, 0.5);
+      }
+
+      .market-card img {
+        flex-shrink: 0;
+        display: block;
+        width: 100%;
+        height: 320px;
+        object-fit: cover;
+      }
+
+      .market-info {
+        padding: 18px;
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+      }
+
+      .market-name {
+        margin: 0;
+        font-size: 14px;
+        color: #f4fbff;
+      }
+
+      .market-rarity {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        padding: 4px 8px;
+        border-radius: 999px;
+        font-size: 11px;
+        letter-spacing: 0.12em;
+        color: var(--color-stardust, #00f0ff);
+        border: 1px solid rgba(0, 240, 255, 0.22);
+        background: rgba(0, 240, 255, 0.08);
+        align-self: flex-start;
+      }
+
+      .market-rarity.is-ssr {
+        text-shadow: 0 0 12px rgba(0, 240, 255, 0.75), 0 0 24px rgba(107, 75, 255, 0.35);
+        box-shadow: 0 0 18px rgba(0, 240, 255, 0.16);
+      }
+
+      .market-desc {
+        margin: 0;
+        color: rgba(255, 255, 255, 0.68);
+        font-size: 12px;
+        line-height: 1.5;
+      }
+
+      .market-meta {
+        display: flex;
+        justify-content: space-between;
+        gap: 8px;
+        color: rgba(223, 252, 255, 0.8);
+        font-size: 12px;
+      }
+
+      .market-buy-btn,
+      .market-download-btn {
+        appearance: none;
+        -webkit-appearance: none;
+        border: 0;
+        outline: none;
+        width: 100%;
+        border-radius: 14px;
+        padding: 10px 12px;
+        cursor: pointer;
+        color: #dffcff;
+        background: rgba(0, 240, 255, 0.08);
+        backdrop-filter: blur(12px);
+        -webkit-backdrop-filter: blur(12px);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.5), 0 0 18px rgba(0, 240, 255, 0.12);
+        text-shadow: 0 0 12px rgba(0, 240, 255, 0.55);
+        transition: all 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+      }
+
+      .market-buy-btn:hover,
+      .market-download-btn:hover {
+        transform: translateY(-1px);
+        background: rgba(0, 240, 255, 0.12);
+        box-shadow: 0 10px 40px rgba(0, 0, 0, 0.55), 0 0 28px rgba(0, 240, 255, 0.22);
+      }
+
+      .market-buy-btn:disabled {
+        opacity: 0.45;
+        cursor: not-allowed;
+        box-shadow: none;
+      }
+
+      .camera-modal {
+        position: fixed;
+        inset: 0;
+        z-index: 200;
+        display: none;
+      }
+
+      .camera-modal.is-open {
+        display: block;
+      }
+
+      .camera-backdrop {
+        position: absolute;
+        inset: 0;
+        background: rgba(0, 0, 0, 0.74);
+        backdrop-filter: blur(12px);
+        -webkit-backdrop-filter: blur(12px);
+      }
+
+      .camera-sheet {
+        position: relative;
+        width: min(560px, calc(100vw - 32px));
+        margin: 8vh auto 0;
+        padding: 20px;
+        border-radius: 28px;
+        background: rgba(255, 255, 255, 0.05);
+        backdrop-filter: blur(12px);
+        -webkit-backdrop-filter: blur(12px);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.5), 0 0 64px rgba(0, 240, 255, 0.06);
+      }
+
+      .camera-title {
+        margin: 0;
+        font-size: 18px;
+        letter-spacing: 0.08em;
+        text-shadow: 0 0 12px rgba(0, 240, 255, 0.35);
+      }
+
+      .camera-preview {
+        width: 100%;
+        height: 320px;
+        margin-top: 14px;
+        border-radius: 24px;
+        overflow: hidden;
+        background: rgba(255, 255, 255, 0.04);
+        position: relative;
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.05);
+      }
+
+      .camera-preview video,
+      .camera-preview img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        display: block;
+      }
+
+      .camera-actions {
+        display: flex;
+        gap: 10px;
+        flex-wrap: wrap;
+        margin-top: 14px;
+      }
+
+      .status {
+        margin-top: 12px;
+        padding: 10px 12px;
+        border-radius: 14px;
+        background: rgba(255, 255, 255, 0.05);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        color: rgba(223, 252, 255, 0.92);
+        font-size: 12px;
+        line-height: 1.6;
+        text-shadow: 0 0 10px rgba(0, 240, 255, 0.12);
+      }
+
+      @keyframes driftStars {
+        0% { transform: translate3d(0, 0, 0) scale(1); }
+        50% { transform: translate3d(1.2%, -0.8%, 0) scale(1.02); }
+        100% { transform: translate3d(0, 0, 0) scale(1); }
+      }
+
+      @keyframes dustBurst {
+        0% { opacity: 0; transform: scale(0.78); }
+        18% { opacity: 1; }
+        100% { opacity: 0; transform: scale(1.22); }
+      }
+
+      @keyframes starRain {
+        0% { transform: translateY(-12vh) scale(0.8); opacity: 0; }
+        18% { opacity: 1; }
+        100% { transform: translateY(108vh) scale(1.2); opacity: 0; }
+      }
+
+      @media (max-width: 720px) {
+        #market-overlay {
+          width: calc(100vw - 20px);
+          height: auto;
+          min-height: calc(100vh - 20px);
+          flex-direction: column;
+        }
+
+        .market-sidebar {
+          flex: none;
+          border-right: none;
+          border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+          padding: 24px;
+        }
+
+        .market-main {
+          padding: 24px;
+        }
+
+        #commodity-grid {
+          grid-template-columns: 1fr;
+          gap: 20px;
+        }
+
+        .camera-sheet {
+          margin-top: 12vh;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="shell"></div>
+
+    <div id="market-overlay">
+      <aside class="market-sidebar">
+        <div class="sidebar-header">
+          <h1 class="market-title">灵魂商铺</h1>
+          <div class="stardust-balance">✦ <span id="stardust-val">0</span></div>
+          <nav class="sidebar-nav">
+            <a href="./bounty-board.html">&#x2726; 悬赏板</a>
+            <a href="./truth-branding.html">&#x2726; 真名刻印</a>
+          </nav>
+          <div class="avatar-preview">
+            <canvas id="avatarCanvas" width="280" height="280"></canvas>
+            <img id="avatarPreview" alt="" hidden />
+          </div>
+        </div>
+        <div class="sidebar-footer">
+          <div class="pawn-altar">
+            <input type="text" id="traveler-name" placeholder="输入你星空中的称号..." autocomplete="off" />
+            <div class="btn-row">
+              <input id="uploadInput" type="file" accept="image/*" hidden />
+              <button id="uploadBtn" class="btn-glow" type="button">上传头像</button>
+              <button id="cameraBtn" class="btn-glow" type="button">摄像头</button>
+            </div>
+            <button id="checkout-btn" class="btn-glow submit-primary" type="button">缔结契约，升维星图</button>
+            <div id="hintEl" class="hint is-hidden"></div>
+          </div>
+        </div>
+      </aside>
+      <main class="market-main">
+        <div id="commodity-grid"></div>
+      </main>
+    </div>
+
+    <div class="camera-modal" id="cameraModal" aria-hidden="true">
+      <div class="camera-backdrop" id="cameraBackdrop"></div>
+      <div class="camera-sheet">
+        <h2 class="camera-title">摄像头采集</h2>
+        <div class="camera-preview">
+          <video id="cameraVideo" autoplay playsinline muted></video>
+          <img id="cameraShot" alt="摄像头照片" hidden />
+        </div>
+        <div class="camera-actions">
+          <button id="cameraCaptureBtn" class="btn" type="button">拍照</button>
+          <button id="cameraRetakeBtn" class="btn" type="button">重拍</button>
+          <button id="cameraUseBtn" class="btn" type="button">使用照片</button>
+          <button id="cameraCloseBtn" class="btn" type="button">关闭</button>
+        </div>
+        <div id="cameraStatus" class="status">准备连接摄像头...</div>
+      </div>
+    </div>
+
+    <script src="./js/global-reset.js"></script>
+    <script src="./js/EconomyManager.js"></script>
+    <script src="./js/CommodityService.js"></script>
+    <script>
+      window.GlobalReset?.mount?.();
+
+      const travelerNameEl = document.getElementById('traveler-name');
+      const uploadInput = document.getElementById('uploadInput');
+      const uploadBtn = document.getElementById('uploadBtn');
+      const cameraBtn = document.getElementById('cameraBtn');
+      const checkoutBtn = document.getElementById('checkout-btn');
+      const stardustValEl = document.getElementById('stardust-val');
+      const commodityGridEl = document.getElementById('commodity-grid');
+      const hintEl = document.getElementById('hintEl');
+
+      const cameraModal = document.getElementById('cameraModal');
+      const cameraVideo = document.getElementById('cameraVideo');
+      const cameraShot = document.getElementById('cameraShot');
+      const cameraStatus = document.getElementById('cameraStatus');
+      const cameraCaptureBtn = document.getElementById('cameraCaptureBtn');
+      const cameraRetakeBtn = document.getElementById('cameraRetakeBtn');
+      const cameraUseBtn = document.getElementById('cameraUseBtn');
+      const cameraCloseBtn = document.getElementById('cameraCloseBtn');
+      const cameraBackdrop = document.getElementById('cameraBackdrop');
+
+      let uploadSource = '';
+      let cameraSource = '';
+      let activeCameraStream = null;
+      let capturedCameraSource = '';
+      const galleryItems = [];
+      let purchasedItem = null;
+
+      const downloadUrlMap = {
+        "item_00": "https://web-vibe-coding.oss-cn-shanghai.aliyuncs.com/images/screenshot-1777624194963.jpg",
+        "item_01": "https://web-vibe-coding.oss-cn-shanghai.aliyuncs.com/images/img_v3_02119_cad1cc5f-82d9-459b-b433-c19771ff0ccg.jpg",
+        "item_02": "https://web-vibe-coding.oss-cn-shanghai.aliyuncs.com/images/img_v3_02119_34a43676-4318-40f6-8762-42412d55890g.jpg",
+        "item_03": "https://web-vibe-coding.oss-cn-shanghai.aliyuncs.com/images/img_v3_02119_d7a3587f-3a97-485f-af38-6031a000d5bg.jpg",
+        "item_04": "https://web-vibe-coding.oss-cn-shanghai.aliyuncs.com/images/img_v3_02119_539da2b5-29e1-4dbf-87dd-b066d71b07bg.jpg",
+        "item_05": "https://web-vibe-coding.oss-cn-shanghai.aliyuncs.com/images/img_v3_02119_58d00837-a202-4b43-a638-d148271dd69g.jpg",
+        "item_06": "https://web-vibe-coding.oss-cn-shanghai.aliyuncs.com/images/img_v3_02119_e9353d10-07f7-492e-8bbf-ee71c0ab9c7g.jpg",
+        "item_07": "https://web-vibe-coding.oss-cn-shanghai.aliyuncs.com/images/img_v3_02119_b15ab009-a0e4-4b5e-a597-0ce4a4455c9g.jpg",
+        "item_08": "https://web-vibe-coding.oss-cn-shanghai.aliyuncs.com/images/img_v3_02119_f3b39061-ecbf-474d-acd2-608eb7c4a97g.jpg",
+        "item_09": "https://web-vibe-coding.oss-cn-shanghai.aliyuncs.com/images/img_v3_02119_7c654565-10e9-4c0f-9b18-858666c1fb0g.jpg",
+        "item_10": "https://web-vibe-coding.oss-cn-shanghai.aliyuncs.com/images/img_v3_02119_fecf385a-2e2d-410d-967f-9755947a617g.jpg",
+        "item_11": "https://web-vibe-coding.oss-cn-shanghai.aliyuncs.com/images/screenshot-1777624194966.jpg",
+        "item_12": "https://web-vibe-coding.oss-cn-shanghai.aliyuncs.com/images/img_v3_02119_dc139d68-4f85-4bb7-b498-7a8b327d5f3g.jpg",
+        "item_13": "https://web-vibe-coding.oss-cn-shanghai.aliyuncs.com/images/img_v3_02119_44c153c6-b214-4482-ae72-c4c085da05fg.jpg",
+        "item_14": "https://web-vibe-coding.oss-cn-shanghai.aliyuncs.com/images/img_v3_02119_1b88d415-a817-4d37-b2f9-aa3d0cf1b03g.jpg",
+        "item_15": "https://web-vibe-coding.oss-cn-shanghai.aliyuncs.com/images/img_v3_02119_25b8288c-5684-4a7e-9563-af1378a8b40g.jpg",
+        "item_16": "https://web-vibe-coding.oss-cn-shanghai.aliyuncs.com/images/img_v3_02119_9427e968-4e12-4b0d-abc7-ca66c5bf888g.jpg",
+        "item_17": "https://web-vibe-coding.oss-cn-shanghai.aliyuncs.com/images/img_v3_02119_9bfb2c8c-1bc8-45a2-a690-5ca7a27317fg.jpg",
+        "item_18": "https://web-vibe-coding.oss-cn-shanghai.aliyuncs.com/images/img_v3_02119_364c34e8-c9c3-4d24-a8a8-5537e932c27g.jpg",
+        "item_19": "https://web-vibe-coding.oss-cn-shanghai.aliyuncs.com/images/img_v3_02119_fb2cd203-2473-4525-9ab7-196a5a71fcdg.jpg",
+        "item_20": "https://web-vibe-coding.oss-cn-shanghai.aliyuncs.com/images/img_v3_02119_15f02f7e-d9b9-4122-b6cb-a30f5363a1fg.jpg",
+        "item_21": "https://web-vibe-coding.oss-cn-shanghai.aliyuncs.com/images/img_v3_02119_c2d30680-f892-4f74-826d-f3e621e807eg.jpg",
+        "item_22": "https://web-vibe-coding.oss-cn-shanghai.aliyuncs.com/images/img_v3_02119_77d8e230-e976-4cbe-8e85-54aa763e2f6g.jpg",
+        "item_23": "https://web-vibe-coding.oss-cn-shanghai.aliyuncs.com/images/img_v3_02119_722f41ce-ffe8-45cc-a4a4-d75d0521172g.jpg",
+        "item_24": "https://web-vibe-coding.oss-cn-shanghai.aliyuncs.com/images/img_v3_02119_7c55551c-6d62-46fd-8eed-0bf2445a6d3g.jpg",
+        "item_25": "https://web-vibe-coding.oss-cn-shanghai.aliyuncs.com/images/img_v3_02119_0de07d47-87fe-4140-9884-a1704f7573fg.jpg",
+        "item_26": "https://web-vibe-coding.oss-cn-shanghai.aliyuncs.com/images/img_v3_02119_57bf1984-e552-4c5d-8700-cdd096c0d33g.jpg",
+        "item_27": "https://web-vibe-coding.oss-cn-shanghai.aliyuncs.com/images/img_v3_02119_037a7810-330d-485a-bab8-4a304a3d6beg.jpg",
+        "item_28": "https://web-vibe-coding.oss-cn-shanghai.aliyuncs.com/images/img_v3_02119_f90bf5da-06a7-401c-b0a7-c301b5045c4g.jpg",
+        "item_29": "https://web-vibe-coding.oss-cn-shanghai.aliyuncs.com/images/img_v3_02119_59e227b6-dd34-414e-9390-bfa7a27c385g.jpg",
+        "item_30": "https://web-vibe-coding.oss-cn-shanghai.aliyuncs.com/images/img_v3_02119_27ce9f5f-688b-480f-818b-ac7cfd158e4g.jpg",
+        "item_31": "https://web-vibe-coding.oss-cn-shanghai.aliyuncs.com/images/img_v3_02119_36edd499-cc90-4cde-8b0d-31cb25e3c93g.jpg",
+        "item_32": "https://web-vibe-coding.oss-cn-shanghai.aliyuncs.com/images/img_v3_02119_2efb7b85-fb59-4ae6-9acb-61d80fd302dg.jpg",
+        "item_33": "https://web-vibe-coding.oss-cn-shanghai.aliyuncs.com/images/img_v3_02119_2efb7b85-fb59-4ae6-9acb-61d80fd302dg.jpg"
+      };
+
+      function fileToDataURL(file) {
+        return new Promise((resolve) => {
+          const reader = new FileReader();
+          reader.onload = () => resolve(String(reader.result || ''));
+          reader.readAsDataURL(file);
+        });
+      }
+
+      function stopCamera() {
+        if (activeCameraStream) {
+          activeCameraStream.getTracks().forEach((track) => track.stop());
+          activeCameraStream = null;
+        }
+      }
+
+      async function startCamera() {
+        try {
+          stopCamera();
+          cameraStatus.textContent = '正在请求摄像头权限...';
+          const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user' }, audio: false });
+          activeCameraStream = stream;
+          cameraVideo.srcObject = stream;
+          cameraVideo.hidden = false;
+          cameraShot.hidden = true;
+          capturedCameraSource = '';
+          cameraStatus.textContent = '摄像头已连接，可以拍照。';
+        } catch (error) {
+          cameraStatus.textContent = '摄像头不可用或权限被拒绝，请检查浏览器权限。';
+        }
+      }
+
+      function openCameraModal() {
+        cameraModal.classList.add('is-open');
+        cameraModal.setAttribute('aria-hidden', 'false');
+        if (!activeCameraStream) startCamera();
+      }
+
+      function closeCameraModal() {
+        cameraModal.classList.remove('is-open');
+        cameraModal.setAttribute('aria-hidden', 'true');
+        stopCamera();
+      }
+
+      function captureCameraFrame() {
+        if (!activeCameraStream) {
+          cameraStatus.textContent = '请先连接摄像头。';
+          return;
+        }
+        const canvas = document.createElement('canvas');
+        const videoWidth = cameraVideo.videoWidth || 1280;
+        const videoHeight = cameraVideo.videoHeight || 720;
+        canvas.width = videoWidth;
+        canvas.height = videoHeight;
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(cameraVideo, 0, 0, canvas.width, canvas.height);
+        capturedCameraSource = canvas.toDataURL('image/png');
+        cameraShot.src = capturedCameraSource;
+        cameraShot.hidden = false;
+        cameraVideo.hidden = true;
+        cameraStatus.textContent = '照片已拍摄，可以使用或重拍。';
+      }
+
+      function syncBalance() {
+        const balance = window.EconomyManager?.getBalance?.() ?? Number(localStorage.getItem('stardust_balance') || 0);
+        localStorage.setItem('stardust_balance', String(balance));
+        if (stardustValEl) stardustValEl.textContent = String(balance);
+      }
+
+      function hashName(name) {
+        let h = 2166136261;
+        for (let i = 0; i < name.length; i += 1) h = Math.imul(h ^ name.charCodeAt(i), 16777619);
+        return h >>> 0;
+      }
+
+      function renderAvatar(name = '', source = '') {
+        const canvas = document.getElementById('avatarCanvas');
+        const preview = document.getElementById('avatarPreview');
+        if (!canvas || !preview) return;
+        const ctx = canvas.getContext('2d');
+        const w = (canvas.width = 280);
+        const h = (canvas.height = 280);
+        const cx = w / 2;
+        const cy = h / 2;
+        ctx.clearRect(0, 0, w, h);
+        ctx.fillStyle = '#020205';
+        ctx.fillRect(0, 0, w, h);
+
+        const hash = hashName(name || 'star');
+        const hue = hash % 360;
+        const density = 120 + (hash % 140);
+
+
+        for (let i = 0; i < density; i += 1) {
+          const a = (i / density) * Math.PI * 2;
+          const r = 18 + (i % 100) * 1.15 + Math.sin(hash * 0.001 + i) * 6;
+          ctx.fillStyle = `hsla(${hue}, 100%, 60%, 0.85)`;
+          ctx.beginPath();
+          ctx.arc(cx + Math.cos(a) * r, cy + Math.sin(a) * r, 1.2 + (i % 3) * 0.5, 0, Math.PI * 2);
+          ctx.fill();
+        }
+        const ring = ctx.createRadialGradient(cx, cy, 42, cx, cy, 132);
+        ring.addColorStop(0, 'rgba(0,240,255,0.0)');
+        ring.addColorStop(0.7, `hsla(${hue}, 100%, 60%, 0.18)`);
+        ring.addColorStop(1, 'rgba(0,240,255,0.55)');
+        ctx.fillStyle = ring;
+        ctx.beginPath();
+        ctx.arc(cx, cy, 132, 0, Math.PI * 2);
+        ctx.fill();
+        if (source) {
+          const img = new Image();
+          img.onload = () => {
+            ctx.save();
+            ctx.beginPath();
+            ctx.arc(cx, cy, 92, 0, Math.PI * 2);
+            ctx.clip();
+            ctx.drawImage(img, 38, 38, 204, 204);
+            ctx.restore();
+            preview.src = source;
+            preview.hidden = false;
+          };
+          img.src = source;
+        } else {
+          preview.hidden = true;
+          preview.removeAttribute('src');
+        }
+      }
+      function syncState() {
+        const name = travelerNameEl?.value.trim() || '';
+        const source = cameraSource || uploadSource || '';
+        renderAvatar(name, source);
+      }
+      function triggerDustEffect() {
+        const dust = document.createElement('div');
+        dust.style.position = 'fixed'; dust.style.inset = '0'; dust.style.pointerEvents = 'none'; dust.style.zIndex = '60';
+        dust.style.background = 'radial-gradient(circle at center, rgba(0,240,255,0.18), transparent 36%)';
+        dust.style.animation = 'dustBurst 900ms ease-out forwards';
+        document.body.appendChild(dust);
+        window.setTimeout(() => dust.remove(), 950);
+      }
+      function spawnStarRain(count = 24) {
+        for (let i = 0; i < count; i += 1) {
+          const star = document.createElement('div'); const size = 2 + Math.random() * 4;
+          star.style.position = 'fixed'; star.style.left = `${Math.random() * 100}vw`; star.style.top = `-${Math.random() * 10}px`;
+          star.style.width = `${size}px`; star.style.height = `${size}px`;
+          star.style.borderRadius = '999px'; star.style.background = 'linear-gradient(180deg, rgba(255,255,255,0.96), rgba(0,240,255,0.08))';
+          star.style.boxShadow = '0 0 12px rgba(0,240,255,0.36)'; star.style.pointerEvents = 'none'; star.style.zIndex = '61';
+          star.style.animation = `starRain ${1 + Math.random() * 2}s linear forwards`; star.style.opacity = '0';
+          document.body.appendChild(star); window.setTimeout(() => star.remove(), 1600);
+        }
+      }
+      function updatePostSubmitTransition() { triggerDustEffect(); spawnStarRain(28); }
+      function renderMarket() {
+        if (!commodityGridEl) return; commodityGridEl.innerHTML = '';
+        const catalog = window.CommodityService?.getCatalog?.() || galleryItems;
+        catalog.forEach((item) => {
+          const card = document.createElement('article'); card.className = 'market-card';
+          const imageUrl = item.imageUrl || item.url || '';
+          const displayName = item.name || item.title || item.id;
+          const purchased = window.CommodityService?.isPurchased?.(item.id);
+        card.innerHTML = `<img src="${imageUrl}" alt="${displayName}" loading="lazy" /><div class="market-info"><div class="market-meta"><span class="market-name">${displayName}</span><span>${item.price} 星尘</span></div><span class="market-rarity${item.rarity === 'SSR' ? ' is-ssr' : ''}">${item.rarity || 'SR'}</span><p class="market-desc">${item.description || ''}</p>${purchased ? '<button class="market-download-btn" data-buy-id="' + item.id + '" disabled>已拥有 / 下载</button>' : '<button class="market-buy-btn" data-buy-id="' + item.id + '">购买</button>'}</div>`;
+          commodityGridEl.appendChild(card);
+        });
+      }
+      async function loadGallery() {
+        try { const res = await fetch('./data/market-gallery.json'); const data = await res.json(); galleryItems.splice(0, galleryItems.length, ...data); window.CommodityService?.loadCatalog?.(galleryItems); }
+        catch (_) { galleryItems.splice(0, galleryItems.length); window.CommodityService?.loadCatalog?.([]); }
+        renderMarket();
+      }
+      uploadBtn.addEventListener('click', () => uploadInput.click());
+      uploadInput.addEventListener('change', async () => { const file = uploadInput.files?.[0]; if (!file) return; uploadSource = await fileToDataURL(file); cameraSource = ''; syncState(); hintEl?.classList.add('is-hidden'); });
+      cameraBtn.addEventListener('click', openCameraModal);
+      cameraCaptureBtn.addEventListener('click', captureCameraFrame);
+      cameraRetakeBtn.addEventListener('click', async () => { if (!activeCameraStream) return startCamera(); cameraVideo.hidden = false; cameraShot.hidden = true; capturedCameraSource = ''; cameraStatus.textContent = '已返回摄像头预览，可重新拍照。'; });
+      cameraUseBtn.addEventListener('click', async () => { if (!capturedCameraSource) { cameraStatus.textContent = '请先拍照后再使用。'; return; } cameraSource = capturedCameraSource; closeCameraModal(); syncState(); hintEl?.classList.add('is-hidden'); });
+      cameraCloseBtn.addEventListener('click', closeCameraModal);
+      cameraBackdrop.addEventListener('click', closeCameraModal);
+      commodityGridEl?.addEventListener('click', (event) => {
+        const button = event.target.closest('[data-buy-id]'); if (!button) return;
+        const id = button.dataset.buyId;
+        const result = window.CommodityService?.purchaseItem?.(id);
+        const item = result?.item || window.CommodityService?.getCatalog?.().find((entry) => entry.id === id) || galleryItems.find((entry) => entry.id === id);
+        if (!result?.ok || !item) return; purchasedItem = item;
+        syncBalance(); renderMarket(); triggerDustEffect(); spawnStarRain(8);
+        const downloadUrl = downloadUrlMap[item.id] || item.imageUrl || item.url || ''; const displayName = item.name || item.title || item.id;
+        const link = document.createElement('a'); link.href = downloadUrl; link.download = `${displayName}.jpg`; link.rel = 'noopener';
+        document.body.appendChild(link); link.click(); link.remove();
+      });
+      checkoutBtn.addEventListener('click', async () => {
+        const name = travelerNameEl.value.trim();
+        if (!name) { hintEl.textContent = '请输入你的名字'; hintEl.classList.remove('is-hidden'); return; }
+        const avatar = cameraSource || uploadSource || '';
+        if (!avatar) { hintEl.textContent = '请上传头像或拍摄照片'; hintEl.classList.remove('is-hidden'); return; }
+        hintEl.classList.add('is-hidden');
+        try {
+          const res = await fetch('/api/wall', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ nickname: name, imageBase64: avatar }) });
+          if (!res.ok) throw new Error(`submit failed: ${res.status}`);
+          window.EconomyManager?.addStardust?.(100);
+          syncBalance(); renderMarket();
+          hintEl.textContent = '提交成功，你的名字已镌刻在纪念墙上。';
+          hintEl.classList.remove('is-hidden');
+          updatePostSubmitTransition();
+          setTimeout(() => { window.location.href = './wall-test.html'; }, 1500);
+        } catch (error) { console.error(error); hintEl.textContent = '提交失败，请重试'; hintEl.classList.remove('is-hidden'); }
+      });
+      travelerNameEl?.addEventListener('input', syncState);
+      // 不再自动跳转，允许用户反复提交
+      syncBalance();
+      window.EconomyManager?.onChange?.(syncBalance);
+      window.CommodityService?.onChange?.(() => { syncBalance(); renderMarket(); });
+      loadGallery();
+      renderAvatar('', '');
+    </script>
+  </body>
+</html>

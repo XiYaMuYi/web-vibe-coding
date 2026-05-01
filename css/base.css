@@ -1,7 +1,11 @@
 :root {
   color-scheme: dark;
-  --panel-bg: rgba(8, 12, 24, 0.54);
-  --panel-border: rgba(255, 255, 255, 0.1);
+  --color-bg: #0B0F19;
+  --color-stardust: #00F0FF;
+  --color-glass: rgba(255, 255, 255, 0.05);
+  --color-glass-border: rgba(255, 255, 255, 0.1);
+  --panel-bg: var(--color-glass);
+  --panel-border: var(--color-glass-border);
   --scanline: rgba(255, 255, 255, 0.035);
 }
 
@@ -11,8 +15,9 @@ body {
   min-height: 100%;
   margin: 0;
   background:
-    radial-gradient(circle at top, rgba(72, 113, 247, 0.18), transparent 35%),
-    linear-gradient(180deg, #02040b 0%, #050816 50%, #02040b 100%);
+    radial-gradient(circle at top, rgba(0, 240, 255, 0.12), transparent 34%),
+    radial-gradient(circle at 50% 35%, rgba(107, 75, 255, 0.08), transparent 26%),
+    linear-gradient(180deg, var(--color-bg) 0%, #050816 52%, #02040b 100%);
   overflow-x: hidden;
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;
@@ -47,7 +52,38 @@ a:hover,
 }
 
 #optionList button:hover {
-  cursor: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24'%3E%3Ccircle cx='12' cy='12' r='3' fill='%237df9ff' fill-opacity='.92'/%3E%3Cpath d='M12 1v4M12 19v4M1 12h4M19 12h4' stroke='%237df9ff' stroke-width='1.4' stroke-linecap='round'/%3E%3C/svg%3E") 12 12, crosshair;
+  cursor: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24'%3E%3Ccircle cx='12' cy='12' r='3' fill='%2300F0FF' fill-opacity='.92'/%3E%3Cpath d='M12 1v4M12 19v4M1 12h4M19 12h4' stroke='%2300F0FF' stroke-width='1.4' stroke-linecap='round'/%3E%3C/svg%3E") 12 12, crosshair;
+}
+
+#stardust-hud {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  z-index: 9998;
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 16px;
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.05);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  color: #e8fdff;
+  font-size: 14px;
+  letter-spacing: 0.12em;
+  box-shadow: 0 10px 42px rgba(0, 0, 0, 0.42), 0 0 30px rgba(0, 240, 255, 0.12);
+  text-shadow: 0 0 14px rgba(0, 240, 255, 0.42);
+  pointer-events: none;
+}
+
+#stardust-hud::before {
+  content: '';
+  width: 10px;
+  height: 10px;
+  border-radius: 999px;
+  background: var(--color-stardust);
+  box-shadow: 0 0 12px var(--color-stardust), 0 0 26px rgba(0, 240, 255, 0.35);
 }
 
 .story-title,
