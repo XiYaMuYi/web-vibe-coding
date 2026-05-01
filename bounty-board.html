@@ -456,15 +456,17 @@
       @media (max-width: 900px) {
         #bounty-overlay {
           width: calc(100vw - 20px);
-          height: auto;
-          min-height: calc(100vh - 20px);
+          height: 90vh;
+          max-height: 90vh;
           flex-direction: column;
+          overflow-y: auto;
+          -webkit-overflow-scrolling: touch;
         }
 
         .board-panel {
           flex: none;
           padding: 20px;
-          min-height: 320px;
+          min-height: 240px;
         }
 
         .terminal-panel {
@@ -475,7 +477,7 @@
         }
 
         .board-container {
-          min-height: 280px;
+          min-height: 200px;
         }
 
         .bounty-card {
