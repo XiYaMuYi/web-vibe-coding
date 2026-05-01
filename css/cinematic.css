@@ -262,6 +262,14 @@ body.scene-enter #cinematic-dialog {
   cursor: pointer;
 }
 
+#action-area,
+#cinematic-dialog,
+.story-option {
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-touch-callout: none;
+}
+
 .story-option:hover {
   transform: scale(1.02);
   filter: brightness(1.16);

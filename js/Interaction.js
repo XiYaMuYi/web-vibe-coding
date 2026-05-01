@@ -115,6 +115,8 @@ const InteractionController = (() => {
   }
 
   function complete(interaction, payload = {}) {
+    // Unbind immediately to prevent re-triggering during transition
+    unbind();
     const nextId = interaction.successTo || interaction?.success_to || interaction?.to || null;
     const detail = {
       type: interaction.type,
@@ -182,11 +184,13 @@ const InteractionController = (() => {
     const target = interaction.targetMs ?? 1200;
     let holding = false;
 
-    const startHold = () => {
+    const startHold = (e) => {
       if (holding) return;
       holding = true;
       holdStart = performance.now();
       vibrate(12);
+      // Prevent text selection during hold (only when hold interaction is active)
+      e?.preventDefault?.();
 
       const tick = (now) => {
         if (!holding) return;

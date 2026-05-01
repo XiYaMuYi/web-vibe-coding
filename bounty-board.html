@@ -538,7 +538,23 @@
       let bounties = [];
       let uploadedSource = '';
 
-      /* ── Fetch bounties from API ── */
+      /* ── Fallback placeholders (ensures ≥12 cards on board) ── */
+      const FALLBACK_BOUNTIES = [
+        { id: 'fb1', description: '寻找失落星辰的旅人，带回三枚光屑即可兑换传说奖励', reward: 500, image_url: 'https://picsum.photos/seed/bounty-star/350/220', created_at: new Date(Date.now() - 3 * 3600000).toISOString() },
+        { id: 'fb2', description: '悬赏：深渊回廊尽头的回声录音，要求无损格式', reward: 800, image_url: 'https://picsum.photos/seed/bounty-echo/350/220', created_at: new Date(Date.now() - 8 * 3600000).toISOString() },
+        { id: 'fb3', description: '求一枚能映照记忆碎片的棱镜，品相不限', reward: 1200, image_url: 'https://picsum.photos/seed/bounty-prism/350/220', created_at: new Date(Date.now() - 1 * 86400000).toISOString() },
+        { id: 'fb4', description: '收集七种不同色温的月光标本，用于炼金实验', reward: 2000, image_url: 'https://picsum.photos/seed/bounty-moon/350/220', created_at: new Date(Date.now() - 2 * 86400000).toISOString() },
+        { id: 'fb5', description: '招募：星际导航员，熟悉暗物质航路者优先', reward: 3500, image_url: 'https://picsum.photos/seed/bounty-nav/350/220', created_at: new Date(Date.now() - 5 * 86400000).toISOString() },
+        { id: 'fb6', description: '高价收购虚空水母活体样本，需冷藏运输', reward: 1500, image_url: 'https://picsum.photos/seed/bounty-jelly/350/220', created_at: new Date(Date.now() - 6 * 3600000).toISOString() },
+        { id: 'fb7', description: '寻人：最后目击于仙女座旋臂的星象师', reward: 6000, image_url: 'https://picsum.photos/seed/bounty-astro/350/220', created_at: new Date(Date.now() - 3 * 86400000).toISOString() },
+        { id: 'fb8', description: '悬赏：完整翻译刻有古神语的石板拓片', reward: 2800, image_url: 'https://picsum.photos/seed/bounty-rune/350/220', created_at: new Date(Date.now() - 12 * 3600000).toISOString() },
+        { id: 'fb9', description: '求购会发光的深海真菌孢子，越多越好', reward: 900, image_url: 'https://picsum.photos/seed/bounty-fungi/350/220', created_at: new Date(Date.now() - 2 * 86400000).toISOString() },
+        { id: 'fb10', description: '征集：星际流浪者的最后家书，真情实感优先', reward: 4000, image_url: 'https://picsum.photos/seed/bounty-letter/350/220', created_at: new Date(Date.now() - 7 * 86400000).toISOString() },
+        { id: 'fb11', description: '悬赏：定位并标记黑洞边缘的引力异常点', reward: 5500, image_url: 'https://picsum.photos/seed/bounty-blackhole/350/220', created_at: new Date(Date.now() - 4 * 86400000).toISOString() },
+        { id: 'fb12', description: '招募梦境潜行者，深入集体潜意识打捞遗失记忆', reward: 3200, image_url: 'https://picsum.photos/seed/bounty-dream/350/220', created_at: new Date(Date.now() - 9 * 86400000).toISOString() },
+      ];
+
+      /* ── Fetch bounties from API ─ */
       async function fetchBounties() {
         try {
           const res = await fetch('/api/bounty');
@@ -551,6 +567,13 @@
         } catch (err) {
           console.error('[bounty] fetch failed', err);
           bounties = [];
+        }
+        /* Fallback: ensure at least 12 cards on the board */
+        if (bounties.length < 12) {
+          const needed = 12 - bounties.length;
+          console.log('[bounty] API returned ' + bounties.length + ' entries, filling with ' + needed + ' placeholders');
+          const extras = FALLBACK_BOUNTIES.slice(0, needed);
+          bounties = bounties.concat(extras);
         }
       }
 
