@@ -146,12 +146,17 @@ const InteractionController = (() => {
     return unbind;
   }
 
+  function isOptionButton(target) {
+    return !!target?.closest?.('button[data-to]');
+  }
+
   function bindMash(interaction) {
     const target = interaction.targetCount ?? 10;
     mashCount = 0;
 
     const handleTap = (event) => {
-      event.preventDefault?.();
+      // Don't block click on option buttons (mobile nav fix)
+      if (!isOptionButton(event.target)) event.preventDefault?.();
       const now = Date.now();
       if (now - lastTapAt < 60) return;
       lastTapAt = now;
@@ -185,11 +190,11 @@ const InteractionController = (() => {
     let holding = false;
 
     const startHold = (e) => {
-      if (holding) return;
+      if (holding || isOptionButton(e?.target)) return;
       holding = true;
       holdStart = performance.now();
       vibrate(12);
-      // Prevent text selection during hold (only when hold interaction is active)
+      // Prevent text selection during hold, but don't block option buttons
       e?.preventDefault?.();
 
       const tick = (now) => {

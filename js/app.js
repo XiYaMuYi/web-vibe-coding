@@ -68,7 +68,10 @@ const AppController = (() => {
   }
 
   function bindOptionButtons() {
-    document.getElementById('action-area')?.addEventListener('click', (event) => {
+    const actionArea = document.getElementById('action-area');
+    if (!actionArea) return;
+
+    function handleOptionAction(event) {
       const button = event.target.closest('button[data-to]');
       if (!button || button.disabled) return;
       const to = button.dataset.to;
@@ -87,6 +90,15 @@ const AppController = (() => {
         return;
       }
       window.Navigator?.goTo?.(to, setFlags ? { setFlags } : null);
+    }
+
+    // PC: click works normally
+    actionArea.addEventListener('click', handleOptionAction);
+    // Mobile: listen to touchend for reliability (Interaction.js touchstart may consume click)
+    actionArea.addEventListener('touchend', (event) => {
+      if (!event.target?.closest?.('button[data-to]')) return;
+      event.preventDefault();
+      handleOptionAction(event);
     });
   }
 
