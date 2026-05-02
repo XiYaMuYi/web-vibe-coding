@@ -72,6 +72,12 @@ const GlobalNavInjector = (() => {
 
     const current = resolveCurrentModule();
 
+    // 记录当前页面访问
+    if (current) markVisited(current);
+
+    // 记录当前页面访问
+    if (current) markVisited(current);
+
     const nav = document.createElement('nav');
     nav.id = 'global-nav-injected';
     nav.innerHTML = NAV_MODULES.map((mod) => {
