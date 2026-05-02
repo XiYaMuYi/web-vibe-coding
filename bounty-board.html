@@ -27,7 +27,7 @@
         radial-gradient(circle at 40% 74%, rgba(0,240,255,0.08) 0 1px, transparent 1.7px),
         radial-gradient(circle at 52% 48%, rgba(107,75,255,0.08) 0 1px, transparent 1.8px);
         opacity:.48; filter: blur(.2px); animation: driftStars 26s linear infinite; }
-      body::after { content:''; position:fixed; inset:0; pointer-events:none; background: radial-gradient(circle at center, transparent 0 20%, rgba(0,0,0,0.2) 50%, rgba(0,0,0,0.4) 100%), radial-gradient(circle at 50% 42%, rgba(0,240,255,0.06), transparent 28%); }
+      body::after { content:''; position:fixed; inset:0; pointer-events:none; background: radial-gradient(circle at center, transparent 0 20%, rgba(0,0,0,0.1) 50%, rgba(0,0,0,0.2) 100%), radial-gradient(circle at 50% 42%, rgba(0,240,255,0.06), transparent 28%); }
       @keyframes driftStars { 0% { transform: translate3d(0,0,0) scale(1);} 50% { transform: translate3d(1.2%,-0.8%,0) scale(1.02);} 100% { transform: translate3d(0,0,0) scale(1);} }
 
       .page-shell { position:fixed; inset:0; display:grid; grid-template-rows:auto 1fr; overflow:hidden; }
@@ -39,7 +39,7 @@
       .delivery-btn:hover { transform:translateY(-1px); box-shadow:0 6px 24px rgba(0,0,0,.5),0 0 18px rgba(0,240,255,.2); }
 
       .board-layout { display:grid; grid-template-columns:280px 1fr; overflow:hidden; border:1px solid rgba(0,240,255,.25); border-radius: 20px; margin: 12px; box-shadow: 0 0 40px rgba(0,240,255,.1); }
-      .board-sidebar { padding:20px; overflow-y:auto; border-right:1px solid rgba(255,255,255,.05); background:rgba(10,15,30,.4); }
+      .board-sidebar { padding:20px; overflow-y:auto; border-right:1px solid rgba(255,255,255,.05); background:rgba(20,25,40,.65); }
       .board-sidebar::-webkit-scrollbar { width:8px; }
       .board-sidebar::-webkit-scrollbar-thumb { background:rgba(0,240,255,.18); border-radius:999px; }
       .board-sidebar::-webkit-scrollbar-track { background:rgba(255,255,255,.02); }
@@ -61,7 +61,7 @@
       .filter-btn.is-active { color:#dffcff; background:linear-gradient(135deg,rgba(0,240,255,.18),rgba(107,75,255,.2)); border-color:rgba(0,240,255,.3); }
 
       .bounty-board-grid { position:relative; min-height:500px; }
-      .bounty-card { position:absolute; border-radius:16px; overflow:hidden; background:rgba(10,15,30,.85); border:1px solid rgba(255,255,255,.08); box-shadow:0 12px 40px rgba(0,0,0,.5); transition:all .4s cubic-bezier(.23,1,.32,1); cursor:pointer; }
+      .bounty-card { position:absolute; border-radius:16px; overflow:hidden; background:rgba(20,25,40,.75); border:1px solid rgba(255,255,255,.12); box-shadow:0 12px 40px rgba(0,0,0,.4); transition:all .4s cubic-bezier(.23,1,.32,1); cursor:pointer; }
       .bounty-card:hover { transform:translateY(-4px) scale(1.02); box-shadow:0 16px 48px rgba(0,0,0,.6),0 0 24px rgba(0,240,255,.12); z-index:5; }
       .bounty-card img { width:100%; height:120px; object-fit:cover; border-bottom:1px solid rgba(255,255,255,.06); }
       .bounty-info { padding:10px; }
@@ -169,8 +169,12 @@
 
           <div class="create-panel">
             <div class="section-title">发布新悬赏</div>
+            <input id="bounty-title" type="text" placeholder="悬赏标题（例如：寻找失落星辰的旅人）" style="width:100%; background:rgba(255,255,255,.04); border:1px solid rgba(255,255,255,.1); border-radius:10px; padding:10px; color:#eafcff; font-size:13px; outline:none; margin-bottom:8px;" />
+            <div style="display: flex; gap: 8px; margin-bottom: 8px;">
+              <input id="bounty-reward" type="number" min="1" placeholder="赏金 (✦)" style="flex: 1; width: 100%; background:rgba(255,255,255,.04); border:1px solid rgba(255,255,255,.1); border-radius:10px; padding:10px; color:#eafcff; font-size:13px; outline:none;" />
+              <input id="bounty-deadline" type="text" placeholder="期限 (如: 72h)" style="flex: 1; width: 100%; background:rgba(255,255,255,.04); border:1px solid rgba(255,255,255,.1); border-radius:10px; padding:10px; color:#eafcff; font-size:13px; outline:none;" />
+            </div>
             <textarea id="bounty-desc" placeholder="描述你的悬赏任务…"></textarea>
-            <input id="bounty-reward" type="number" min="1" placeholder="悬赏金额 (✦)" />
             <div class="drop-zone" id="drop-zone">拖拽图片至此 或 点击上传</div>
             <input id="bounty-file" type="file" accept="image/*" hidden />
             <div class="image-preview" id="image-preview">
@@ -296,11 +300,11 @@
       }
 
       /* ── API: Create bounty ── */
-      async function createBounty(description, reward, imageBase64, title) {
+      async function createBounty(title, description, reward, deadline, imageBase64) {
         const res = await fetch('/api/bounty', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ description, reward: Number(reward), imageBase64, title }),
+          body: JSON.stringify({ title, description, reward: Number(reward), deadline, imageBase64 }),
         });
         return res.json();
       }
@@ -639,13 +643,16 @@
         const btn = document.getElementById('submit-btn');
         if (!btn) return;
         btn.addEventListener('click', async () => {
-          const reward = document.getElementById('bounty-reward').value;
-          const desc = document.getElementById('bounty-desc').value.trim();
-          const imageBase64 = uploadedSource;
+        const title = document.getElementById('bounty-title').value.trim();
+        const reward = document.getElementById('bounty-reward').value;
+        const deadline = document.getElementById('bounty-deadline').value.trim() || '72h';
+        const desc = document.getElementById('bounty-desc').value.trim();
+        const imageBase64 = uploadedSource;
 
-          if (!desc) { showFormStatus('error', '请填写悬赏描述'); return; }
-          if (!reward || Number(reward) <= 0) { showFormStatus('error', '请填写有效悬赏金额'); return; }
-          if (!imageBase64) { showFormStatus('error', '请上传悬赏附图'); return; }
+        if (!title) { showFormStatus('error', '请填写悬赏标题'); return; }
+        if (!desc) { showFormStatus('error', '请填写悬赏描述'); return; }
+        if (!reward || Number(reward) <= 0) { showFormStatus('error', '请填写有效悬赏金额'); return; }
+        if (!imageBase64) { showFormStatus('error', '请上传悬赏附图'); return; }
 
           const bal = (window.EconomyManager?.getBalance?.() ?? Number(localStorage.getItem("stardust_balance") || 0)) || 0;
           if (bal < Number(reward)) {
@@ -660,7 +667,7 @@
           showFormStatus('', '提交中…');
 
           try {
-            const res = await createBounty(desc, reward, imageBase64, desc.slice(0, 20));
+            const res = await createBounty(title, desc, reward, deadline, imageBase64);
             if (res.ok) {
               if (window.EconomyManager) {
                 window.EconomyManager.spendStardust(Number(reward));

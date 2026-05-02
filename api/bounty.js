@@ -72,6 +72,7 @@ function rowToFrontend(row) {
     title: row.title || '',
     description: row.description,
     reward: row.reward,
+    deadline: row.deadline || '72h',
     image_url: row.image_url,
     created_at: row.created_at,
     status: row.status || 'open',
@@ -136,7 +137,7 @@ module.exports = async function handler(req, res) {
 
     /* ── POST: 发布新悬赏 ── */
     if (req.method === 'POST') {
-      const { description, reward, imageBase64, title } = req.body || {};
+      const { title, description, reward, deadline, imageBase64 } = req.body || {};
       if (!description || !imageBase64) {
         await safeEnd(db);
         return res.status(400).json({ ok: false, error: 'description and imageBase64 are required' });
@@ -151,11 +152,12 @@ module.exports = async function handler(req, res) {
       const imageUrl = await uploadToOSS(buffer, mimeType, 'bounties');
 
       const bountyTitle = title || description.slice(0, 20);
+      const bountyDeadline = deadline || '72h';
       const { rows } = await db.query(
-        `INSERT INTO bounties (title, description, reward, image_url, status)
-         VALUES ($1, $2, $3, $4, 'open')
+        `INSERT INTO bounties (title, description, reward, deadline, image_url, status)
+         VALUES ($1, $2, $3, $4, $5, 'open')
          RETURNING *`,
-        [bountyTitle, String(description).trim(), rewardAmount, imageUrl]
+        [bountyTitle, String(description).trim(), rewardAmount, bountyDeadline, imageUrl]
       );
       await safeEnd(db);
       return res.status(201).json({ ok: true, data: rowToFrontend(rows[0]) });
