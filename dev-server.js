@@ -46,10 +46,12 @@ async function loadEnvLocal() {
 
 async function runApiRoute(apiPath, req, res) {
   const scriptPath = path.join(ROOT, 'api', apiPath);
-  console.log('[api] Requested:', apiPath, '->', scriptPath);
+  // Try with .js extension if exact path doesn't exist
+  const actualPath = fs.existsSync(scriptPath) ? scriptPath : scriptPath + '.js';
+  console.log('[api] Requested:', apiPath, '->', actualPath);
   
-  if (!fs.existsSync(scriptPath)) {
-    console.log('[api] File not found:', scriptPath);
+  if (!fs.existsSync(actualPath)) {
+    console.log('[api] File not found:', actualPath);
     res.writeHead(404, { 'Content-Type': 'text/plain' });
     res.end('Not Found');
     return;
@@ -58,11 +60,11 @@ async function runApiRoute(apiPath, req, res) {
   // Load the script using createRequire (supports CommonJS)
   try {
     console.log('[api] Attempting to load...');
-    const requireFromFile = createRequire(scriptPath);
+    const requireFromFile = createRequire(actualPath);
     // Clear require cache to pick up changes
-    const resolvedPath = requireFromFile.resolve(scriptPath);
+    const resolvedPath = requireFromFile.resolve(actualPath);
     delete require.cache[resolvedPath];
-    const handler = requireFromFile(scriptPath);
+    const handler = requireFromFile(actualPath);
     console.log('[api] Loaded handler, type:', typeof handler);
     
     // Collect body
@@ -70,13 +72,17 @@ async function runApiRoute(apiPath, req, res) {
     for await (const chunk of req) body += chunk;
     
     // Create mock req/res objects compatible with Vercel API
-    const mockReq = {
-      method: req.method,
-      url: req.url,
-      headers: req.headers,
-      query: {},
-      body: body ? JSON.parse(body) : null,
-    };
+  // Parse query parameters
+  const urlObj = new URL(req.url, `http://localhost:${process.env.PORT || 3000}`);
+  const query = Object.fromEntries(urlObj.searchParams);
+
+  const mockReq = {
+    method: req.method,
+    url: req.url,
+    headers: req.headers,
+    query: query, // Pass parsed query to API handlers
+    body: body ? JSON.parse(body) : null,
+  };
 
     let statusCode = 200;
     const headers = {};

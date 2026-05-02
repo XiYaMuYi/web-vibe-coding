@@ -1,0 +1,457 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <meta name="theme-color" content="#020205" />
+    <title>悬赏交付页</title>
+    <style>
+      :root {
+        color-scheme: dark;
+        --panel-bg: rgba(10, 15, 30, 0.85);
+        --panel-border: rgba(0, 240, 255, 0.15);
+      }
+      * { box-sizing: border-box; }
+      html, body { margin: 0; width: 100%; height: 100%; overflow: hidden; background: #020205; font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; color: #eafcff; }
+      body {
+        background:
+          radial-gradient(circle at 50% 40%, rgba(26, 31, 46, 0.98) 0%, rgba(10, 14, 24, 0.96) 30%, rgba(4, 6, 12, 0.98) 56%, #020205 100%),
+          radial-gradient(circle at 20% 18%, rgba(0, 240, 255, 0.12), transparent 18%),
+          radial-gradient(circle at 78% 26%, rgba(107, 75, 255, 0.12), transparent 20%),
+          radial-gradient(circle at 50% 80%, rgba(255, 255, 255, 0.04), transparent 22%);
+      }
+      body::before { content:''; position:fixed; inset:-20%; pointer-events:none; background:
+        radial-gradient(circle at 18% 28%, rgba(255,255,255,0.09) 0 1px, transparent 1.5px),
+        radial-gradient(circle at 68% 16%, rgba(255,255,255,0.07) 0 1px, transparent 1.5px),
+        radial-gradient(circle at 82% 72%, rgba(255,255,255,0.08) 0 1px, transparent 1.5px),
+        radial-gradient(circle at 40% 74%, rgba(0,240,255,0.08) 0 1px, transparent 1.7px),
+        radial-gradient(circle at 52% 48%, rgba(107,75,255,0.08) 0 1px, transparent 1.8px);
+        opacity:.48; filter: blur(.2px); animation: driftStars 26s linear infinite; }
+      body::after { content:''; position:fixed; inset:0; pointer-events:none; background: radial-gradient(circle at center, transparent 0 20%, rgba(0,0,0,0.2) 50%, rgba(0,0,0,0.4) 100%), radial-gradient(circle at 50% 42%, rgba(0,240,255,0.06), transparent 28%); }
+      .page-shell { position:fixed; inset:0; display:grid; place-items:center; }
+      .delivery-overlay {
+        width: 90vw; height: 85vh; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); z-index: 100;
+        background: rgba(10, 15, 30, 0.85); backdrop-filter: blur(24px); -webkit-backdrop-filter: blur(24px);
+        border: 1px solid rgba(0, 240, 255, 0.3); border-radius: 24px; display: flex; overflow: hidden;
+        box-shadow: 0 0 40px rgba(0, 240, 255, 0.15), 0 24px 72px rgba(0,0,0,0.48), 0 0 90px rgba(0,240,255,0.08);
+      }
+      .delivery-sidebar { flex: 0 0 340px; padding: 40px; border-right: 1px solid rgba(255,255,255,0.05); display:flex; flex-direction:column; justify-content:space-between; gap:18px; }
+      .delivery-main { flex:1; padding:40px; overflow-y:auto; min-height:0; }
+      .delivery-main::-webkit-scrollbar { width:10px; }
+      .delivery-main::-webkit-scrollbar-thumb { background: rgba(0,240,255,0.22); border-radius:999px; }
+      .delivery-main::-webkit-scrollbar-track { background: rgba(255,255,255,0.03); }
+      .title { margin:0; font-size: clamp(28px, 3vw, 42px); letter-spacing:.08em; text-shadow:0 0 14px rgba(0,240,255,.35), 0 0 26px rgba(0,240,255,.12); }
+      .chip, .panel { border-radius:16px; padding:14px 16px; background: rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.08); box-shadow:0 8px 32px rgba(0,0,0,.35); }
+      .label { display:block; font-size:11px; letter-spacing:.12em; color: rgba(0,240,255,.65); margin-bottom:6px; text-transform:uppercase; }
+      .value { font-size:18px; }
+      .hero { display:grid; grid-template-columns: 1.1fr .9fr; gap: 18px; align-items:start; }
+      .art img { width:100%; max-height:420px; object-fit:cover; border-radius:22px; border:1px solid rgba(255,255,255,.08); }
+      .hero h2 { margin:14px 0 8px; font-size:28px; letter-spacing:.05em; }
+      .hero p { margin:0; line-height:1.85; color: rgba(255,255,255,.72); }
+      .grid { display:grid; grid-template-columns: repeat(2, minmax(0,1fr)); gap:12px; margin-top:18px; }
+      .kv { padding:14px; border-radius:16px; background: rgba(255,255,255,.04); border:1px solid rgba(255,255,255,.08); }
+      .kv .k { display:block; font-size:11px; color: rgba(0,240,255,.7); letter-spacing:.12em; text-transform:uppercase; margin-bottom:6px; }
+      .kv .v { font-size:18px; }
+      .stack { display:flex; flex-direction:column; gap:14px; }
+      .material-list { display:grid; gap:10px; }
+      .material { padding:12px 14px; border-radius:14px; background: rgba(255,255,255,.04); border:1px solid rgba(255,255,255,.08); color: rgba(255,255,255,.78); }
+      .signature { display:flex; flex-direction:column; gap:10px; }
+      .signature input { width:100%; background:transparent; color:#eafcff; border:0; border-bottom:1px solid rgba(0,240,255,.32); padding:8px 2px; font-size:16px; outline:none; }
+      .row { display:flex; gap:10px; flex-wrap:wrap; }
+      .btn { appearance:none; -webkit-appearance:none; border:0; outline:none; border-radius:14px; padding:12px 16px; cursor:pointer; color:#dffcff; background: rgba(0,240,255,.08); border:1px solid rgba(255,255,255,.1); box-shadow:0 8px 32px rgba(0,0,0,.5), 0 0 18px rgba(0,240,255,.12); transition: all .3s ease; }
+      .btn:hover { transform: translateY(-1px); box-shadow: 0 10px 40px rgba(0,0,0,.55), 0 0 28px rgba(0,240,255,.22); }
+      .primary { background: linear-gradient(135deg, rgba(0,240,255,.24), rgba(107,75,255,.26)); }
+      .notice { display:none; padding:12px 14px; border-radius:14px; line-height:1.6; font-size:13px; }
+      .notice.is-visible { display:block; }
+      .notice.success { border:1px solid rgba(0,240,255,.25); background: rgba(0,240,255,.08); color: rgba(202,253,255,.92); }
+      .notice.error { border:1px solid rgba(255,140,140,.28); background: rgba(255,90,90,.08); color: rgba(255,220,220,.94); }
+      .statusline { font-size:12px; color: rgba(255,255,255,.65); line-height:1.8; }
+      .back-btn { position:fixed; left:16px; top:12px; z-index:120; }
+      .image-preview { display:none; margin-top: 8px; }
+      .image-preview.is-visible { display:block; }
+      .drop-zone { display:flex; align-items:center; justify-content:center; height:80px; border:2px dashed rgba(0,240,255,.2); border-radius:10px; cursor:pointer; transition:all .3s ease; font-size:12px; color:rgba(255,255,255,.4); }
+      .drop-zone:hover { border-color:rgba(0,240,255,.4); background:rgba(0,240,255,.04); }
+      @keyframes driftStars { 0% { transform: translate3d(0,0,0) scale(1);} 50% { transform: translate3d(1.2%,-0.8%,0) scale(1.02);} 100% { transform: translate3d(0,0,0) scale(1);} }
+      @media (max-width: 980px) {
+        .delivery-overlay { width: calc(100vw - 12px); height: calc(100vh - 12px); flex-direction: column; }
+        .delivery-sidebar { flex:none; border-right:0; border-bottom:1px solid rgba(255,255,255,.05); }
+        .hero { grid-template-columns: 1fr; }
+      }
+      @media (max-width: 640px) {
+        .delivery-sidebar, .delivery-main { padding: 18px; }
+        .grid { grid-template-columns:1fr; }
+      }
+    </style>
+  </head>
+  <body>
+    <button class="back-btn btn" type="button" onclick="window.location.href='./bounty-board.html'">&#x27F5; 返回悬赏中枢</button>
+    <div class="page-shell">
+      <section class="delivery-overlay">
+        <aside class="delivery-sidebar">
+          <div class="stack">
+            <h1 class="title">悬赏交付页</h1>
+            <div class="chip"><span class="label">当前契约编号</span><div class="value" id="contract-id">—</div></div>
+            <div class="chip"><span class="label">星辰余额</span><div class="value"><strong id="delivery-balance">0</strong> ✦</div></div>
+            <div class="chip"><span class="label">当前交付状态</span><div class="value" id="delivery-status">等待契约签收</div></div>
+          </div>
+          <div class="chip">
+            <span class="label">命运回收提示</span>
+            <div class="statusline" id="delivery-tips">请签下真名，完成契约交付后，托管星辰将进入结算。</div>
+          </div>
+        </aside>
+        <main class="delivery-main">
+          <div class="hero">
+            <section class="panel art">
+              <img id="delivery-image" alt="悬赏图像" />
+              <h2 id="delivery-title"></h2>
+              <p id="delivery-lore"></p>
+              <div class="grid">
+                <div class="kv"><span class="k">悬赏等级</span><div class="v" id="delivery-rarity"></div></div>
+                <div class="kv"><span class="k">托管金额</span><div class="v" id="delivery-bid"></div></div>
+                <div class="kv"><span class="k">契约状态</span><div class="v" id="delivery-contract"></div></div>
+                <div class="kv"><span class="k">交付期限</span><div class="v" id="delivery-deadline"></div></div>
+              </div>
+            </section>
+            <section class="stack">
+              <div class="panel">
+                <div class="label">交付材料</div>
+                <div class="material-list" id="material-list"></div>
+              </div>
+              <div class="panel signature">
+                <div class="label">契约签名</div>
+                <input id="signature-input" type="text" placeholder="签下你的真名..." autocomplete="off" />
+                
+                <div style="margin-top: 16px;">
+                  <div class="label">交付说明</div>
+                  <textarea id="delivery-materials" rows="3" placeholder="描述你的交付内容或附上留言..." style="width:100%; background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.08); border-radius:12px; padding:10px; color:#eafcff; font-size:13px; outline:none; resize:vertical; font-family:inherit;"></textarea>
+                </div>
+                
+                <div style="margin-top: 16px;">
+                  <div class="label">交付凭证 (图片)</div>
+                  <div class="drop-zone" id="delivery-drop-zone">点击或拖拽上传交付成果图</div>
+                  <input id="delivery-file" type="file" accept="image/*" hidden />
+                  <div class="image-preview" id="delivery-image-preview">
+                    <img id="preview-img" alt="预览" style="width:100%; max-height:160px; object-fit:cover; border-radius:10px; border:1px solid rgba(255,255,255,0.08); margin-top:8px;" />
+                  </div>
+                </div>
+
+                <div class="row" style="margin-top: 18px;">
+                  <button class="btn primary" id="confirm-delivery" type="button">确认交付</button>
+                  <button class="btn" id="refund-escrow" type="button">退回托管</button>
+                </div>
+                <div class="notice" id="delivery-notice"></div>
+              </div>
+            </section>
+          </div>
+        </main>
+      </section>
+    </div>
+
+    <script src="./js/EconomyManager.js"></script>
+    <script>
+      const STORAGE_KEY = 'bounty_nexus_state';
+      /* ── State ── */
+      const NEXUS_STATE_KEY = 'bounty_nexus_state';
+      const DELIVERY_KEY = 'bounty_nexus_active';
+
+      /* ── Fallback data ── */
+      const bountyItems = [
+        { id: 'bounty_001', title: '失落的星门钥匙', rarity: 'SSR', reward: 3000, deadline: '3d 12h', image: './image/bounty_001.jpg', lore: '被流放于第九轨道的钥匙，持有者可听见门后的潮汐。' },
+        { id: 'bounty_002', title: '梦境船坞的回声舵轮', rarity: 'SR', reward: 1800, deadline: '2d 04h', image: './image/bounty_002.jpg', lore: '旧世航船的舵轮，转动时会发出亡灵群星的低语。' },
+        { id: 'bounty_003', title: '第七码头的白色信标', rarity: 'R', reward: 900, deadline: '18h 24m', image: './image/bounty_003.jpg', lore: '一束没有方向的光，被谁握住，谁就会被它记住。' },
+        { id: 'bounty_004', title: '无名旅人的签名碎片', rarity: 'SSR', reward: 5400, deadline: '5d 08h', image: './image/bounty_004.jpg', lore: '所有跨越星海的誓言，最后都会碎成一枚签名。' },
+        { id: 'bounty_005', title: '深空歌姬的静默麦克风', rarity: 'SR', reward: 2600, deadline: '1d 10h', image: './image/bounty_005.jpg', lore: '当她沉默时，整片星云都在聆听。' },
+        { id: 'bounty_006', title: '黑洞边缘的反光银币', rarity: 'R', reward: 1200, deadline: '4d 03h', image: './image/bounty_006.jpg', lore: '它总会回到你手里，像命运本身。' },
+        { id: 'fb1', title: '失落星辰的旅人', rarity: 'R', reward: 500, deadline: '刚刚', image: 'https://picsum.photos/seed/bounty-star/350/220', lore: '寻找失落星辰的旅人，带回三枚光屑即可兑换传说奖励' },
+        { id: 'fb2', title: '深渊回廊回声录音', rarity: 'R', reward: 800, deadline: '2 小时前', image: 'https://picsum.photos/seed/bounty-echo/350/220', lore: '悬赏：深渊回廊尽头的回声录音，要求无损格式' },
+        { id: 'fb3', title: '记忆棱镜', rarity: 'SR', reward: 1200, deadline: '1 天前', image: 'https://picsum.photos/seed/bounty-prism/350/220', lore: '求一枚能映照记忆碎片的棱镜，品相不限' },
+        { id: 'fb4', title: '月光标本收集令', rarity: 'SR', reward: 2000, deadline: '2 天前', image: 'https://picsum.photos/seed/bounty-moon/350/220', lore: '收集七种不同色温的月光标本，用于炼金实验' },
+        { id: 'fb5', title: '星际导航员招募', rarity: 'SSR', reward: 3500, deadline: '5 天前', image: 'https://picsum.photos/seed/bounty-nav/350/220', lore: '招募：星际导航员，熟悉暗物质航路者优先' },
+        { id: 'fb6', title: '虚空水母样本', rarity: 'SR', reward: 1500, deadline: '6 小时前', image: 'https://picsum.photos/seed/bounty-jelly/350/220', lore: '高价收购虚空水母活体样本，需冷藏运输' },
+        { id: 'fb7', title: '仙女座星象师', rarity: 'SSR', reward: 6000, deadline: '3 天前', image: 'https://picsum.photos/seed/bounty-astro/350/220', lore: '寻人：最后目击于仙女座旋臂的星象师' },
+        { id: 'fb8', title: '古神语石板拓片', rarity: 'SR', reward: 2800, deadline: '12 小时前', image: 'https://picsum.photos/seed/bounty-rune/350/220', lore: '悬赏：完整翻译刻有古神语的石板拓片' },
+        { id: 'fb9', title: '深海真菌孢子', rarity: 'R', reward: 900, deadline: '2 天前', image: 'https://picsum.photos/seed/bounty-fungi/350/220', lore: '求购会发光的深海真菌孢子，越多越好' },
+        { id: 'fb10', title: '星际流浪者家书', rarity: 'SSR', reward: 4000, deadline: '7 天前', image: 'https://picsum.photos/seed/bounty-letter/350/220', lore: '征集：星际流浪者的最后家书，真情实感优先' },
+        { id: 'fb11', title: '黑洞引力异常点', rarity: 'SSR', reward: 5500, deadline: '4 天前', image: 'https://picsum.photos/seed/bounty-blackhole/350/220', lore: '悬赏：定位并标记黑洞边缘的引力异常点' },
+        { id: 'fb12', title: '梦境潜行者', rarity: 'SR', reward: 3200, deadline: '9 天前', image: 'https://picsum.photos/seed/bounty-dream/350/220', lore: '招募梦境潜行者，深入集体潜意识打捞遗失记忆' },
+      ];
+      
+      function loadNexusState() {
+        try {
+          const raw = localStorage.getItem(NEXUS_STATE_KEY);
+          return raw ? JSON.parse(raw) : {};
+        } catch(_) { return {}; }
+      }
+
+      const nexusState = loadNexusState();
+      const currentUserBid = nexusState.currentUserBid || JSON.parse(localStorage.getItem(DELIVERY_KEY) || 'null');
+      
+      function syncBalance() {
+        const bal = (typeof window.EconomyManager !== 'undefined' && window.EconomyManager.getBalance) 
+          ? window.EconomyManager.getBalance() 
+          : Number(localStorage.getItem('stardust_balance') || 0);
+        const el = document.getElementById('delivery-balance');
+        if (el) el.textContent = bal;
+      }
+
+      function persistState(stateObj) {
+        localStorage.setItem(NEXUS_STATE_KEY, JSON.stringify(stateObj));
+        if (stateObj.currentUserBid) localStorage.setItem(DELIVERY_KEY, JSON.stringify(stateObj.currentUserBid));
+      }
+      function setNotice(msg, kind='success') { const el = document.getElementById('delivery-notice'); el.textContent = msg; el.className = `notice is-visible ${kind}`; }
+      function clearNotice() { const el = document.getElementById('delivery-notice'); el.textContent = ''; el.className = 'notice'; }
+
+      // 获取当前交付的悬赏项：优先从 Nexus State 的 enriched 数据读取，再 fallback 到 bountyItems
+      function selectedItem() {
+        const params = new URLSearchParams(location.search);
+        const id = params.get('itemId') || currentUserBid?.itemId || null;
+        if (!id) return { id: 'default', title: '未知契约', rarity: '?', reward: 0, deadline: '—', image: '', lore: '未找到对应的悬赏数据。' };
+
+        if (currentUserBid?.itemId === id && currentUserBid.title) {
+          return {
+            id: currentUserBid.itemId, title: currentUserBid.title, rarity: currentUserBid.rarity || '?',
+            reward: currentUserBid.reward || currentUserBid.amount, deadline: '—', image: currentUserBid.image || '', lore: currentUserBid.lore || '',
+          };
+        }
+        const item = bountyItems.find((x) => x.id === id);
+        return item || { id, title: '契约 #' + id, rarity: '?', reward: 0, deadline: '—', image: '', lore: '未找到对应的悬赏数据。' };
+      }
+      function announceDelivery(msg) { document.getElementById('delivery-tips').textContent = msg; }
+      function updateUI() {
+        const item = selectedItem();
+        const bid = currentUserBid?.itemId === item.id ? currentUserBid : null;
+        
+        // 1. 美化契约编号 (例如 bounty_38 -> NO.38)
+        const displayId = item.id.replace('bounty_', '').replace(/^fb/, '') || item.id;
+        document.getElementById('contract-id').textContent = `NO.${displayId}`;
+        
+        document.getElementById('delivery-image').src = item.image || '';
+        document.getElementById('delivery-title').textContent = item.title;
+        document.getElementById('delivery-lore').textContent = item.lore;
+        document.getElementById('delivery-rarity').textContent = item.rarity;
+        document.getElementById('delivery-bid').textContent = `✦ ${(nexusState.bids?.[item.id] ?? bid?.amount ?? item.reward)}`;
+        
+        // 2. 契约状态中文映射
+        const rawStatus = bid?.status || '待领取';
+        const statusMap = {
+          'open': '待认领',
+          'claimed': '已认领/托管中',
+          'escrowed': '已认领/托管中',
+          'delivered': '交付已提交',
+          'completed': '契约归档完成',
+          'outbid_refunded': '已超越退款',
+          'refunded': '已退回'
+        };
+        document.getElementById('delivery-contract').textContent = statusMap[rawStatus] || rawStatus;
+        
+        // 3. 交付期限处理
+        document.getElementById('delivery-deadline').textContent = item.deadline || '72 小时';
+
+        const statusText = bid
+          ? (bid.status === 'escrowed' || bid.status === 'claimed' ? '等待交付'
+             : bid.status === 'delivered' ? '交付已提交'
+             : bid.status === 'completed' ? '契约归档完成'
+             : bid.status === 'outbid_refunded' ? '已超越退款'
+             : '处理中')
+          : '等待契约签收';
+        document.getElementById('delivery-status').textContent = statusText;
+
+        const tipsMap = {
+          escrowed: '签下真名，即可将托管星辰送入结算轨道。',
+          completed: '契约已完成，星门已承认你的签名，命运开始回收。',
+          outbid_refunded: '已超越退款，托管金额已退回账户。',
+        };
+        document.getElementById('delivery-tips').textContent = bid
+          ? (tipsMap[bid.status] || tipsMap.escrowed)
+          : '你尚未托管此契约，若要交付请先在悬赏中枢领取。';
+
+        const list = document.getElementById('material-list');
+        list.innerHTML = [
+          `契约编号：NO.${displayId}`,
+          `星辰托管：${nexusState.bids?.[item.id] ?? item.reward}`,
+          `命运标签：${item.rarity}`,
+          `结算通道：虚空托管池`,
+        ].map((t) => `<div class="material">${t}</div>`).join('');
+
+        // Lock / unlock action area based on status
+        const confirmBtn = document.getElementById('confirm-delivery');
+        const refundBtn = document.getElementById('refund-escrow');
+        const sigInput = document.getElementById('signature-input');
+
+        if (bid?.status === 'completed') {
+          confirmBtn.style.display = 'none';
+          refundBtn.style.display = 'none';
+          sigInput.disabled = true;
+          sigInput.style.opacity = '0.4';
+          sigInput.value = bid.signature || '(已签名)';
+          setNotice('契约已完成，星门已承认你的签名，命运开始回收。', 'success');
+        } else if (bid?.status === 'outbid_refunded') {
+          confirmBtn.style.display = 'none';
+          refundBtn.style.display = 'none';
+          sigInput.disabled = true;
+          sigInput.style.opacity = '0.4';
+          setNotice(`已超越退款，托管金额 ${bid.amount} ✦ 已退回账户。`, 'success');
+        } else if (!bid) {
+          confirmBtn.style.display = 'none';
+          refundBtn.style.display = 'none';
+          sigInput.disabled = true;
+          sigInput.style.opacity = '0.4';
+          setNotice('你尚未托管此契约，若要交付请先在悬赏中枢认领。', 'error');
+        } else {
+          confirmBtn.style.display = '';
+          refundBtn.style.display = '';
+          sigInput.disabled = false;
+          sigInput.style.opacity = '';
+          sigInput.value = bid?.signature || '';
+        }
+      }
+
+      function confirmDelivery() {
+        const item = selectedItem();
+        const bid = currentUserBid;
+        const signature = document.getElementById('signature-input').value.trim();
+        const materials = document.getElementById('delivery-materials').value.trim();
+        
+        if (!signature) { setNotice('请先签下真名，再完成交付。', 'error'); announceDelivery('请签下真名，才能让契约被宇宙承认。'); return; }
+        if (!bid || bid.itemId !== item.id) { setNotice('当前没有可交付的契约。', 'error'); announceDelivery('你尚未托管此契约，无法进行交付。'); return; }
+        if (bid.status === 'outbid_refunded') { setNotice('该契约已易主，无法交付。', 'error'); announceDelivery('契约已被更高意志夺走，无法继续交付。'); return; }
+        if (!deliveryImageBase64 && !materials) { setNotice('请至少上传交付图片或填写交付说明。', 'error'); return; }
+
+        // Disable button
+        const confirmBtn = document.getElementById('confirm-delivery');
+        confirmBtn.disabled = true;
+        confirmBtn.textContent = '提交交付中...';
+
+        fetch('/api/bounty', {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            id: bid.itemId.replace('bounty_', ''),
+            action: 'deliver',
+            signature: signature,
+            deliveryMaterials: materials,
+            deliveryImageBase64: deliveryImageBase64
+          })
+        })
+        .then(res => res.json())
+        .then(json => {
+          if (json.ok) {
+            setNotice('契约交付成功！星门已承认你的签名，命运开始回收。', 'success');
+            announceDelivery('交付成功，请等待结算。');
+            // Update local state
+            currentUserBid.status = 'delivered';
+            currentUserBid.deliveryImage = deliveryImageBase64;
+            currentUserBid.deliveryMaterials = materials;
+            persistState({ ...nexusState, currentUserBid });
+            updateUI();
+          } else {
+            // 翻译后端错误
+            let errorMsg = '交付失败';
+            if (json.error) {
+              if (json.error.includes('cannot be completed')) errorMsg = '该契约已处于完成或异常状态，无法重复交付。';
+              else if (json.error.includes('not found')) errorMsg = '未在档案库中找到该契约。';
+              else errorMsg = json.error;
+            }
+            setNotice(errorMsg, 'error');
+          }
+        })
+        .catch(err => {
+          console.error('Delivery failed:', err);
+          setNotice('网络异常，交付失败。', 'error');
+        })
+        .finally(() => {
+          confirmBtn.disabled = false;
+          confirmBtn.textContent = '确认交付';
+        });
+      }
+
+      function refundEscrow() {
+        const bid = currentUserBid;
+        if (!bid) { setNotice('没有可退回的托管。', 'error'); announceDelivery('当前没有可退回的托管。'); return; }
+        if (bid.status !== 'escrowed' && bid.status !== 'claimed') { setNotice('当前契约无法退回托管。', 'error'); announceDelivery('当前契约状态不允许退回。'); return; }
+        if (window.EconomyManager) {
+          window.EconomyManager.addStardust(bid.amount);
+        }
+        currentUserBid.status = 'outbid_refunded';
+        persistState({ ...nexusState, currentUserBid });
+        syncBalance();
+        setNotice(`意志被碾压，契约易主，${bid.amount} ✦ 已退回账户。`, 'success');
+        announceDelivery(`意志被碾压，契约易主，${bid.amount} 星辰已退回账户。`);
+        updateUI();
+      }
+
+      document.getElementById('confirm-delivery').addEventListener('click', confirmDelivery);
+      document.getElementById('refund-escrow').addEventListener('click', refundEscrow);
+      /* ── Image Upload ── */
+      let deliveryImageBase64 = '';
+      const dropZone = document.getElementById('delivery-drop-zone');
+      const fileInput = document.getElementById('delivery-file');
+      const preview = document.getElementById('delivery-image-preview');
+      const previewImg = document.getElementById('preview-img');
+
+      if (dropZone && fileInput) {
+        dropZone.addEventListener('click', () => fileInput.click());
+        dropZone.addEventListener('dragover', e => { e.preventDefault(); dropZone.style.borderColor = 'rgba(0,240,255,0.5)'; });
+        dropZone.addEventListener('dragleave', () => { dropZone.style.borderColor = 'rgba(0,240,255,0.22)'; });
+        dropZone.addEventListener('drop', e => {
+          e.preventDefault();
+          dropZone.style.borderColor = 'rgba(0,240,255,0.22)';
+          if (e.dataTransfer.files[0]) handleFile(e.dataTransfer.files[0]);
+        });
+        fileInput.addEventListener('change', () => { if (fileInput.files[0]) handleFile(fileInput.files[0]); });
+      }
+
+      function handleFile(file) {
+        if (!file.type.startsWith('image/')) return;
+        const reader = new FileReader();
+        reader.onload = () => {
+          deliveryImageBase64 = reader.result;
+          if (previewImg) previewImg.src = deliveryImageBase64;
+          if (preview) preview.classList.add('is-visible');
+          if (dropZone) dropZone.textContent = '✓ 图片已上传: ' + file.name;
+        };
+        reader.readAsDataURL(file);
+      }
+
+      /* ── Fetch remote data if local data is missing ── */
+      function fetchAndRenderMissingData(id) {
+        if (!id || id === 'default') return;
+        if (bountyItems.find(b => b.id === id)) return; // Already exists
+
+        fetch(`/api/bounty?id=${id}`)
+          .then(res => res.json())
+          .then(json => {
+            if (json.ok && json.data) {
+              let b = Array.isArray(json.data) ? json.data.find(x => x.id === id || x.id === `bounty_${id}`) : json.data;
+              if (b) {
+                // Fill missing fields for UI consistency
+                if (!b.deadline) b.deadline = '72 小时';
+                if (!b.rarity) b.rarity = b.reward >= 3000 ? 'SSR' : b.reward >= 1000 ? 'SR' : 'R';
+                if (!b.image_url) b.image_url = '';
+                
+                // Add to local registry
+                bountyItems.push(b);
+                
+                // Refresh UI with the new data
+                updateUI();
+              }
+            }
+          })
+          .catch(err => console.error('Failed to fetch bounty data:', err));
+      }
+
+      /* ── Init ── */
+      window.addEventListener('DOMContentLoaded', () => {
+        syncBalance();
+        updateUI();
+        if (window.EconomyManager) window.EconomyManager.onChange(syncBalance);
+        
+        // If current item is unknown/missing, try fetching from API
+        const item = selectedItem();
+        if (item.lore === '未找到对应的悬赏数据。') {
+          fetchAndRenderMissingData(item.id);
+        }
+      });
+    </script>
+  </body>
+</html>

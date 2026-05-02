@@ -1,0 +1,679 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+<meta name="theme-color" content="#020205" />
+<title>轮回拍卖场 · Samsara Auction</title>
+<style>
+:root { color-scheme: dark; }
+*, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+html, body {
+  margin: 0; width: 100%; height: 100%; overflow: hidden;
+  background: radial-gradient(circle at 50% 40%, rgba(26,31,46,0.98) 0%, rgba(10,14,24,0.96) 30%, rgba(4,6,12,0.98) 56%, #020205 100%),
+    radial-gradient(circle at 20% 18%, rgba(0,240,255,0.12), transparent 18%),
+    radial-gradient(circle at 78% 26%, rgba(107,75,255,0.12), transparent 20%),
+    radial-gradient(circle at 50% 80%, rgba(255,255,255,0.04), transparent 22%);
+  color: #eafcff;
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+}
+#starfield {
+  position: fixed; inset: 0; pointer-events: none; z-index: 0;
+  background:
+    radial-gradient(circle at 50% 40%, rgba(26,31,46,0.98) 0%, rgba(10,14,24,0.96) 30%, rgba(4,6,12,0.98) 56%, #020205 100%),
+    radial-gradient(circle at 20% 18%, rgba(0,240,255,0.12), transparent 18%),
+    radial-gradient(circle at 78% 26%, rgba(107,75,255,0.12), transparent 20%),
+    radial-gradient(circle at 50% 80%, rgba(255,255,255,0.04), transparent 22%);
+}
+.star {
+  position: absolute; border-radius: 50%; background: rgba(255,255,255,0.7);
+  animation: driftStars var(--dur) linear infinite; opacity: 0.48;
+}
+@keyframes driftStars {
+  0% { transform: translate3d(0,0,0) scale(1); }
+  50% { transform: translate3d(1.2%,-0.8%,0) scale(1.02); }
+  100% { transform: translate3d(0,0,0) scale(1); }
+}
+#auction-hud {
+  position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 14px 28px;
+  background: linear-gradient(180deg, rgba(10,15,25,0.95) 0%, transparent 100%);
+  font-size: 14px;
+}
+#auction-hud .title {
+  font-size: clamp(16px,1.6vw,20px); font-weight: 700; letter-spacing: 0.12em;
+  color: rgba(245,250,255,0.96); text-shadow: 0 0 18px rgba(0,240,255,0.18);
+}
+#auction-hud .balance-box {
+  display: inline-flex; align-items: center; gap: 8px;
+  padding: 12px 16px; border-radius: 18px;
+  background: rgba(10,15,25,0.6); backdrop-filter: blur(15px); -webkit-backdrop-filter: blur(15px);
+  border: 1px solid rgba(255,255,255,0.08); border-top: 1px solid rgba(0,240,255,0.3);
+  color: #00f0ff; font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 15px; letter-spacing: 0.14em;
+  box-shadow: 0 14px 40px rgba(0,0,0,0.4), 0 0 24px rgba(0,240,255,0.12);
+  transition: transform 220ms ease, filter 220ms ease, box-shadow 220ms ease;
+}
+#auction-hud .balance-box.is-boosting {
+  transform: scale(1.1);
+  filter: brightness(1.2) drop-shadow(0 0 18px rgba(255,255,255,0.45));
+  box-shadow: 0 18px 56px rgba(0,0,0,0.48), 0 0 30px rgba(0,240,255,0.26);
+}
+#hud-balance-val {
+  font-size: 15px; color: #00f0ff; text-shadow: 0 0 14px rgba(0,240,255,0.55);
+}
+#auction-hud .balance-box .icon { color: #00f0ff; font-size: 14px; }
+#monolith-board {
+  position: fixed; top: 50%; left: 50%;
+  transform: translate(-50%, calc(-50% + 28px));
+  width: 70vw; height: 80vh; overflow-y: auto; overflow-x: hidden; z-index: 10;
+  background: rgba(10,15,30,0.85);
+  backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(0,240,255,0.15); border-radius: 24px; padding: 8px 0;
+  box-shadow: 0 24px 72px rgba(0,0,0,0.48), 0 0 90px rgba(0,240,255,0.08);
+}
+#monolith-board::-webkit-scrollbar { width: 10px; }
+#monolith-board::-webkit-scrollbar-track { background: rgba(255,255,255,0.03); }
+#monolith-board::-webkit-scrollbar-thumb { background: rgba(0,240,255,0.22); border-radius: 999px; }
+.auction-item {
+  display: flex; align-items: center; gap: 16px; padding: 12px 24px;
+  cursor: pointer; position: relative; transition: background 0.3s ease; overflow: hidden;
+}
+.auction-item::before {
+  content: ''; position: absolute; top: 0; left: -100%;
+  width: 100%; height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(0,240,255,0.06), rgba(107,75,255,0.03), transparent);
+  transition: left 0.6s ease; pointer-events: none;
+}
+.auction-item:hover { background: rgba(0,240,255,0.04); }
+.auction-item:hover::before { left: 100%; }
+.auction-item + .auction-item { border-top: 1px solid rgba(0,240,255,0.08); }
+.rank {
+  flex-shrink: 0; width: 32px; height: 32px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 14px; font-weight: 800;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  border-radius: 50%; background: rgba(255,255,255,0.04); color: rgba(234,252,255,0.5);
+}
+.rank.gold {
+  color: #ffd700; text-shadow: 0 0 12px rgba(255,215,0,0.6);
+  background: rgba(255,215,0,0.08); box-shadow: 0 0 12px rgba(255,215,0,0.15);
+}
+.rank.purple {
+  color: #b266ff; text-shadow: 0 0 12px rgba(178,102,255,0.6);
+  background: rgba(178,102,255,0.08); box-shadow: 0 0 12px rgba(178,102,255,0.15);
+}
+.rank.red {
+  color: #ff4444; text-shadow: 0 0 12px rgba(255,68,68,0.6);
+  background: rgba(255,68,68,0.08); box-shadow: 0 0 12px rgba(255,68,68,0.15);
+}
+.thumb {
+  flex-shrink: 0; width: 52px; height: 52px; border-radius: 50%; object-fit: cover;
+  border: 2px solid rgba(0,240,255,0.25); transition: border-color 0.3s, box-shadow 0.3s;
+}
+.auction-item:hover .thumb {
+  border-color: rgba(0,240,255,0.6); box-shadow: 0 0 16px rgba(0,240,255,0.22);
+}
+.item-info { flex: 1; min-width: 0; }
+.item-name {
+  font-size: 15px; font-weight: 600; color: #f4fbff; margin-bottom: 4px;
+  text-shadow: 0 0 8px rgba(0,240,255,0.18);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.item-tier {
+  display: inline-block; font-size: 11px;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  padding: 2px 8px; border-radius: 999px;
+  background: rgba(0,240,255,0.06); color: rgba(0,240,255,0.7);
+  border: 1px solid rgba(0,240,255,0.15); letter-spacing: 0.08em;
+}
+.item-tier.ssr {
+  color: #ffd700; background: rgba(255,215,0,0.08);
+  border-color: rgba(255,215,0,0.25); text-shadow: 0 0 8px rgba(255,215,0,0.3);
+}
+.item-tier.sr {
+  color: #b266ff; background: rgba(178,102,255,0.08);
+  border-color: rgba(178,102,255,0.25); text-shadow: 0 0 8px rgba(178,102,255,0.3);
+}
+.item-bid-info { flex-shrink: 0; text-align: right; }
+.current-price {
+  font-size: 17px; font-weight: 700;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  color: #00f0ff; text-shadow: 0 0 8px rgba(0,240,255,0.3); letter-spacing: 0.06em;
+}
+.countdown {
+  font-size: 12px; font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  color: rgba(255,255,255,0.3); margin-top: 3px; letter-spacing: 0.04em;
+}
+.countdown.urgent { color: #ff5b5b; animation: pulse-red 1.2s ease-in-out infinite; }
+@keyframes pulse-red { 0%,100% { opacity:1; } 50% { opacity:0.5; } }
+.modal-overlay {
+  position: fixed; inset: 0; z-index: 1000;
+  display: flex; align-items: center; justify-content: center;
+  background: rgba(0,0,0,0.8); backdrop-filter: blur(20px) saturate(0.6);
+  opacity: 0; pointer-events: none; transition: opacity 0.35s ease;
+}
+.modal-overlay.active { opacity: 1; pointer-events: auto; }
+#bidding-modal {
+  width: min(85vw, 960px); max-height: 85vh; display: flex;
+  border-radius: 24px; overflow: hidden;
+  border: 1px solid rgba(0,240,255,0.15);
+  box-shadow: 0 24px 72px rgba(0,0,0,0.48), 0 0 90px rgba(0,240,255,0.08);
+  background: rgba(10,15,25,0.85);
+  backdrop-filter: blur(24px); -webkit-backdrop-filter: blur(24px);
+  transform: scale(0.9); transition: transform 0.35s cubic-bezier(0.34,1.56,0.64,1);
+}
+.modal-overlay.active #bidding-modal { transform: scale(1); }
+.modal-lore {
+  width: 42%; flex-shrink: 0; position: relative; overflow: hidden;
+  border-right: 1px solid rgba(255,255,255,0.05);
+}
+.modal-lore-img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.modal-lore-overlay {
+  position: absolute; bottom: 0; left: 0; right: 0;
+  padding: 24px 20px 20px;
+  background: linear-gradient(0deg, rgba(10,15,25,0.95) 0%, rgba(10,15,25,0.6) 70%, transparent 100%);
+}
+.modal-lore-overlay .item-name {
+  font-size: clamp(18px,1.8vw,22px); color: #f4fbff;
+  text-shadow: 0 0 14px rgba(0,240,255,0.35); margin-bottom: 8px;
+}
+.lore-text {
+  font-size: 12px; line-height: 1.6; color: rgba(234,252,255,0.55); font-style: italic;
+}
+.modal-trade {
+  flex: 1; padding: 28px 32px;
+  display: flex; flex-direction: column; gap: 20px; overflow-y: auto;
+}
+.modal-trade .section-label {
+  font-size: 11px; text-transform: uppercase; letter-spacing: 0.1em;
+  color: rgba(0,240,255,0.6); margin-bottom: 6px;
+}
+.highest-bid-box {
+  padding: 14px 18px; border-radius: 14px;
+  border: 1px solid rgba(0,240,255,0.15); background: rgba(0,240,255,0.06);
+  display: flex; justify-content: space-between; align-items: center;
+}
+.highest-bid-box .label { font-size: 13px; color: rgba(234,252,255,0.5); }
+.highest-bid-box .value {
+  font-size: 22px; font-weight: 700;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  color: #00f0ff; text-shadow: 0 0 14px rgba(0,240,255,0.55); letter-spacing: 0.1em;
+}
+.bid-input-wrap { display: flex; flex-direction: column; gap: 10px; }
+.bid-input-row { display: flex; align-items: center; gap: 10px; }
+.bid-input-row input[type="number"] {
+  flex: 1; padding: 8px 2px; font-size: 18px;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  color: #eafcff; background: transparent; border: 0;
+  border-bottom: 2px solid rgba(0,240,255,0.18); outline: none;
+  transition: border-color 0.3s ease, box-shadow 0.3s ease;
+}
+.bid-input-row input[type="number"]:focus {
+  border-bottom-color: rgba(0,240,255,0.6); box-shadow: 0 4px 16px rgba(0,240,255,0.15);
+}
+.bid-input-row input[type="number"]::placeholder { color: rgba(234,252,255,0.3); }
+.bid-input-row input[type="number"]::-webkit-outer-spin-button,
+.bid-input-row input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+.bid-input-row input[type="number"] { -moz-appearance: textfield; }
+.bid-input-row .unit { font-size: 13px; color: rgba(234,252,255,0.5); letter-spacing: 0.06em; }
+.quick-actions { display: flex; gap: 10px; }
+.quick-btn {
+  flex: 1; padding: 10px 0; font-size: 13px; font-weight: 600;
+  font-family: inherit; letter-spacing: 0.08em;
+  border: 1px solid rgba(0,240,255,0.15); border-radius: 14px;
+  background: rgba(0,240,255,0.08); color: #dffcff; cursor: pointer;
+  text-shadow: 0 0 12px rgba(0,240,255,0.55);
+  box-shadow: 0 8px 32px 0 rgba(0,0,0,0.5), 0 0 18px rgba(0,240,255,0.12);
+  transition: all 0.4s cubic-bezier(0.25,0.46,0.45,0.94);
+}
+.quick-btn:hover {
+  transform: translateY(-1px); background: rgba(0,240,255,0.12);
+  box-shadow: 0 10px 40px rgba(0,0,0,0.55), 0 0 28px rgba(0,240,255,0.22);
+}
+.quick-btn:active { transform: scale(0.97); }
+.quick-btn.all-in {
+  background: rgba(107,75,255,0.12); border-color: rgba(107,75,255,0.25);
+  text-shadow: 0 0 12px rgba(107,75,255,0.55);
+}
+.quick-btn.all-in:hover {
+  background: rgba(107,75,255,0.18); border-color: rgba(107,75,255,0.4);
+  box-shadow: 0 10px 40px rgba(0,0,0,0.55), 0 0 28px rgba(107,75,255,0.22);
+}
+.balance-display {
+  font-size: 11px; color: rgba(0,240,255,0.5); text-align: center; letter-spacing: 0.06em;
+}
+.balance-display .val {
+  color: #00f0ff; font-weight: 700;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  text-shadow: 0 0 10px rgba(0,240,255,0.4);
+}
+.submit-btn {
+  appearance: none; -webkit-appearance: none; border: 0; outline: none;
+  border-radius: 14px; padding: 14px 20px; cursor: pointer; color: #dffcff;
+  font-size: 14px; font-weight: 600; letter-spacing: 0.08em;
+  background: linear-gradient(135deg, rgba(0,240,255,0.25), rgba(107,75,255,0.32));
+  box-shadow: 0 12px 34px rgba(0,240,255,0.18), 0 0 34px rgba(107,75,255,0.12);
+  text-shadow: 0 0 14px rgba(0,240,255,0.6);
+  transition: all 0.4s cubic-bezier(0.25,0.46,0.45,0.94);
+  margin-top: auto; position: relative; overflow: hidden;
+}
+.submit-btn::before {
+  content: ''; position: absolute; top: 0; left: -100%;
+  width: 100%; height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.08), transparent);
+  transition: left 0.5s;
+}
+.submit-btn:hover::before { left: 100%; }
+.submit-btn:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 16px 48px rgba(0,240,255,0.3), 0 0 52px rgba(0,240,255,0.22);
+}
+.submit-btn:active:not(:disabled) { transform: scale(0.97); }
+.submit-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+.modal-close {
+  position: absolute; top: 14px; right: 14px; width: auto; border: 0; outline: none;
+  border-radius: 8px; padding: 6px 12px; cursor: pointer; color: #dffcff;
+  background: rgba(0,240,255,0.08); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255,255,255,0.1);
+  box-shadow: 0 8px 32px 0 rgba(0,0,0,0.5), 0 0 18px rgba(0,240,255,0.12);
+  text-shadow: 0 0 12px rgba(0,240,255,0.55);
+  transition: all 0.4s cubic-bezier(0.25,0.46,0.45,0.94);
+  font-size: 12px; letter-spacing: 0.06em; z-index: 10;
+}
+.modal-close:hover {
+  transform: translateY(-1px); background: rgba(0,240,255,0.12);
+  box-shadow: 0 10px 40px rgba(0,0,0,0.55), 0 0 28px rgba(0,240,255,0.22);
+}
+.toast-container {
+  position: fixed; left: 50%; top: 18%; transform: translateX(-50%);
+  z-index: 2000; display: flex; flex-direction: column; gap: 10px; pointer-events: none;
+}
+.toast {
+  padding: 12px 18px; border-radius: 999px;
+  background: rgba(10,15,25,0.72);
+  backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(0,240,255,0.18); border-top: 1px solid rgba(0,240,255,0.34);
+  color: rgba(240,247,255,0.92); font-size: 13px; letter-spacing: 0.14em;
+  box-shadow: 0 12px 34px rgba(0,0,0,0.42), 0 0 22px rgba(0,240,255,0.12);
+  animation: toast-in 1000ms ease-out forwards; max-width: 500px; text-align: center;
+}
+.toast.success { border-color: rgba(0,240,255,0.4); color: rgba(0,240,255,0.9); }
+.toast.error   { border-color: rgba(255,120,120,0.4); color: rgba(255,180,180,0.9); }
+.toast.refund  { border-color: rgba(107,75,255,0.4); color: rgba(178,160,255,0.9); }
+.toast.fade-out { animation: toast-out 0.4s ease-in forwards; }
+@keyframes toast-in {
+  0%   { opacity:0; transform:translateX(-50%) translateY(12px) scale(0.96); }
+  18%  { opacity:1; }
+  100% { opacity:0; transform:translateX(-50%) translateY(-10px) scale(1.03); }
+}
+@keyframes toast-out {
+  from { opacity:1; transform:translateX(-50%) translateY(0) scale(1); }
+  to   { opacity:0; transform:translateX(-50%) translateY(-12px) scale(0.95); }
+}
+@media (max-width: 768px) {
+  #monolith-board { width: 95vw; height: 75vh; }
+  .auction-item { padding: 10px 16px; gap: 12px; }
+  .thumb { width: 42px; height: 42px; }
+  #bidding-modal { flex-direction: column; max-height: 90vh; }
+  .modal-lore { width: 100%; height: 200px; }
+  #auction-hud { padding: 10px 16px; }
+  #auction-hud .title { font-size: 14px; letter-spacing: 0.08em; }
+}
+</style>
+</head>
+<body>
+<div id="starfield"></div>
+<div id="auction-hud">
+  <div class="title">轮回拍卖场 · SAMSARA AUCTION</div>
+  <div class="balance-box">
+    <span class="icon"></span>
+    <span id="hud-balance-val">0</span>
+    <span>星辰</span>
+  </div>
+</div>
+<div id="monolith-board"></div>
+<div class="modal-overlay" id="modal-overlay">
+  <div id="bidding-modal">
+    <button class="modal-close" id="modal-close-btn">✕ 返回</button>
+    <div class="modal-lore">
+      <img class="modal-lore-img" id="modal-img" src="" alt="" />
+      <div class="modal-lore-overlay">
+        <div class="item-name" id="modal-name"></div>
+        <div class="item-tier" id="modal-tier"></div>
+        <div class="lore-text" id="modal-lore"></div>
+      </div>
+    </div>
+    <div class="modal-trade">
+      <div>
+        <div class="section-label">当前最高出价</div>
+        <div class="highest-bid-box">
+          <span class="label">最高价</span>
+          <span class="value" id="modal-highest-price">0</span>
+        </div>
+      </div>
+      <div class="bid-input-wrap">
+        <div class="section-label">出价金额</div>
+        <div class="bid-input-row">
+          <input type="number" id="bid-input" min="0" step="1" placeholder="输入出价…" />
+          <span class="unit">✦ 星辰</span>
+        </div>
+        <div class="quick-actions">
+          <button class="quick-btn" id="btn-plus10">加价 10%</button>
+          <button class="quick-btn all-in" id="btn-allin">ALL IN（全押）</button>
+        </div>
+      </div>
+      <div class="balance-display">
+        账户余额：<span class="val" id="modal-balance">0</span>  星辰
+      </div>
+      <button class="submit-btn" id="btn-submit-bid">确认出价</button>
+    </div>
+  </div>
+</div>
+<div class="toast-container" id="toast-container"></div>
+<script src="js/EconomyManager.js"></script>
+<script>
+// ===== 回退数据 (file:// 协议下使用) =====
+const FALLBACK_AUCTION_DATA = [
+  {id:'A001',name:'生命之水',grade:'学徒级',basePrice:10000,currentBid:15000,timeLeft:'1天05小时',lore:'能瞬间修复断肢的奇异药水，地球早期的珍贵资源。',imageUrl:'https://picsum.photos/seed/a001/200'},
+  {id:'A002',name:'黑神套装',grade:'行星级',basePrice:20000,currentBid:28000,timeLeft:'2天11小时',lore:'覆盖全身的奇异战衣，能削弱九成以上的冲击力。',imageUrl:'https://picsum.photos/seed/a002/200'},
+  {id:'A003',name:'木伢晶',grade:'行星级',basePrice:50000,currentBid:75000,timeLeft:'0天12小时',lore:'蕴含纯粹宇宙本源能量的白色晶体，带有奇异米香。',imageUrl:'https://picsum.photos/seed/a003/200'},
+  {id:'A004',name:'赤混铜母残片',grade:'不朽级材料',basePrice:80000,currentBid:120000,timeLeft:'5天00小时',lore:'连不朽神灵都极难破坏的宇宙顶级金属边缘残片。',imageUrl:'https://picsum.photos/seed/a004/200'},
+  {id:'A005',name:'遁天梭',grade:'恒星级',basePrice:100000,currentBid:160000,timeLeft:'3天08小时',lore:'陨墨星主人亲手炼制的掌控者精神念力兵器。',imageUrl:'https://picsum.photos/seed/a005/200'},
+  {id:'A006',name:'摩云藤种子',grade:'宇宙级培育物',basePrice:150000,currentBid:220000,timeLeft:'4天18小时',lore:'全宇宙极其著名的植物生命，认主后是最佳的战甲与伙伴。',imageUrl:'https://picsum.photos/seed/a006/200'},
+  {id:'A007',name:'碧波髓',grade:'恒星级',basePrice:30000,currentBid:45000,timeLeft:'1天02小时',lore:'能极大提升水之本源法则感悟的珍贵灵液。',imageUrl:'https://picsum.photos/seed/a007/200'},
+  {id:'A008',name:'银河系领主凭证',grade:'宇宙帝国级',basePrice:500000,currentBid:800000,timeLeft:'7天00小时',lore:'黑龙山帝国签发的官方星系合法拥有权芯片。',imageUrl:'https://picsum.photos/seed/a008/200'},
+  {id:'A009',name:'呼延博秘传残卷',grade:'不朽级',basePrice:300000,currentBid:550000,timeLeft:'2天20小时',lore:'陨墨星主人关于灵魂防御秘法的残篇记录。',imageUrl:'https://picsum.photos/seed/a009/200'},
+  {id:'A010',name:'弧刀盘',grade:'行星级',basePrice:12000,currentBid:18000,timeLeft:'0天05小时',lore:'精神念师的初级锋锐兵器，切割力惊人。',imageUrl:'https://picsum.photos/seed/a010/200'},
+  {id:'A011',name:'衍神兵',grade:'界主级',basePrice:800000,currentBid:1500000,timeLeft:'12天00小时',lore:'精神念师掌控者九大神兵之一，蕴含金、空间两大本源法则。',imageUrl:'https://picsum.photos/seed/a011/200'},
+  {id:'A012',name:'洛克神水',grade:'界主级',basePrice:2000000,currentBid:3500000,timeLeft:'15天10小时',lore:'能瞬间让植物生命突破进化瓶颈的宇宙奇珍。',imageUrl:'https://picsum.photos/seed/a012/200'},
+  {id:'A013',name:'机械族飞船残骸',grade:'不朽级',basePrice:5000000,currentBid:8800000,timeLeft:'20天00小时',lore:'E级甚至F级金属打造的机械族宇宙飞船控制核心区。',imageUrl:'https://picsum.photos/seed/a013/200'},
+  {id:'A014',name:'域主级血统药剂',grade:'域主级',basePrice:1000000,currentBid:1800000,timeLeft:'6天12小时',lore:'能从基因层面改造肉体，成年即达到域主级的逆天药剂。',imageUrl:'https://picsum.photos/seed/a014/200'},
+  {id:'A015',name:'空间戒指(长宽万公里)',grade:'界主级',basePrice:400000,currentBid:700000,timeLeft:'2天09小时',lore:'内部蕴含极其庞大储存空间的顶级储物器。',imageUrl:'https://picsum.photos/seed/a015/200'},
+  {id:'A016',name:'营养舱(满能)',grade:'宇宙级',basePrice:200000,currentBid:380000,timeLeft:'1天15小时',lore:'装满高阶宇宙营养液的舱室，可供快速突破阶层储备能量。',imageUrl:'https://picsum.photos/seed/a016/200'},
+  {id:'A017',name:'极光剑',grade:'宇宙级',basePrice:80000,currentBid:150000,timeLeft:'0天18小时',lore:'武者使用的光属性三阶原力兵器。',imageUrl:'https://picsum.photos/seed/a017/200'},
+  {id:'A018',name:'幻术师千幻面具',grade:'域主级',basePrice:500000,currentBid:920000,timeLeft:'4天06小时',lore:'能改变灵魂气息，释放顶级幻术波动的奇宝。',imageUrl:'https://picsum.photos/seed/a018/200'},
+  {id:'A019',name:'斩空刀',grade:'域主级',basePrice:600000,currentBid:1100000,timeLeft:'5天02小时',lore:'附带极其凌厉的空间切割属性的战刀。',imageUrl:'https://picsum.photos/seed/a019/200'},
+  {id:'A020',name:'宇宙晶(10吨)',grade:'通用货币',basePrice:100000,currentBid:120000,timeLeft:'1天00小时',lore:'界主世界凝聚的高纯度本源能量晶体，宇宙硬通货。',imageUrl:'https://picsum.photos/seed/a020/200'},
+  {id:'A021',name:'血洛晶',grade:'尊者级遗留',basePrice:3000000,currentBid:5500000,timeLeft:'18天00小时',lore:'融合后能大幅度跃升基因层次，感受宇宙金、空间法则的血红色晶体。',imageUrl:'https://picsum.photos/seed/a021/200'},
+  {id:'A022',name:'兽神雕像(微缩仿品)',grade:'不朽级',basePrice:4000000,currentBid:7200000,timeLeft:'22天11小时',lore:'散发着远古金之兽神恐怖威压的临摹神像，参悟融合法则的至宝。',imageUrl:'https://picsum.photos/seed/a022/200'},
+  {id:'A023',name:'界主世界戒指',grade:'界主级',basePrice:800000,currentBid:1400000,timeLeft:'8天08小时',lore:'内部包含一整个独立世界（含星系生态）的顶级戒指。',imageUrl:'https://picsum.photos/seed/a023/200'},
+  {id:'A024',name:'炎星巨兽逆鳞',grade:'界主级巅峰',basePrice:1500000,currentBid:2800000,timeLeft:'10天05小时',lore:'星空巨兽十二巅峰血统之一，炎星巨兽最坚硬的一块火属性能量鳞片。',imageUrl:'https://picsum.photos/seed/a024/200'},
+  {id:'A025',name:'虚空之塔秘法',grade:'尊者级秘传',basePrice:5000000,currentBid:9500000,timeLeft:'25天00小时',lore:'在灵魂中构筑七层虚空塔的绝对灵魂防御秘法。',imageUrl:'https://picsum.photos/seed/a025/200'},
+  {id:'A026',name:'煞气结晶',grade:'域主级',basePrice:200000,currentBid:450000,timeLeft:'3天10小时',lore:'血洛世界特产，极度凝聚的煞气，用于磨练意志极佳。',imageUrl:'https://picsum.photos/seed/a026/200'},
+  {id:'A027',name:'魔杀族皮肤',grade:'界主级',basePrice:2500000,currentBid:4200000,timeLeft:'14天00小时',lore:'宇宙最强暗杀种族留下的皮囊，极佳的夺舍/分身孕育材料。',imageUrl:'https://picsum.photos/seed/a027/200'},
+  {id:'A028',name:'原力战衣(五阶)',grade:'界主级',basePrice:600000,currentBid:1000000,timeLeft:'5天12小时',lore:'可随意变换形态，硬抗界主级巅峰强者全力一击。',imageUrl:'https://picsum.photos/seed/a028/200'},
+  {id:'A029',name:'镭射枪(E9级)',grade:'界主级科技',basePrice:3500000,currentBid:6000000,timeLeft:'11天00小时',lore:'需要极长蓄力时间，但一枪足以湮灭普通界主巅峰强者的科技杀器。',imageUrl:'https://picsum.photos/seed/a029/200'},
+  {id:'A030',name:'陨墨星号核心',grade:'不朽级',basePrice:8000000,currentBid:15000000,timeLeft:'30天00小时',lore:'由F级金属赤混铜母打造的超级飞船残存智脑核心。',imageUrl:'https://picsum.photos/seed/a030/200'},
+  {id:'A031',name:'灵魂火印',grade:'不朽级',basePrice:12000000,currentBid:21000000,timeLeft:'35天00小时',lore:'奴役不朽神灵的绝对禁忌之物，极其罕见。',imageUrl:'https://picsum.photos/seed/a031/200'},
+  {id:'A032',name:'不朽神晶',grade:'不朽级',basePrice:10000000,currentBid:18500000,timeLeft:'28天00小时',lore:'不朽神灵神国破灭后留下的纯粹不朽神力结晶。',imageUrl:'https://picsum.photos/seed/a032/200'},
+  {id:'A033',name:'神灵基地坐标',grade:'封王不朽级',basePrice:20000000,currentBid:36000000,timeLeft:'45天00小时',lore:'域外战场某个已被封闭的超级神灵战争基地的跃迁图。',imageUrl:'https://picsum.photos/seed/a033/200'},
+  {id:'A034',name:'兽神传承令',grade:'宇宙之主级',basePrice:80000000,currentBid:150000000,timeLeft:'99天00小时',lore:'前往祖神教，接受宇宙最强融合法则传承的绝对通行证。',imageUrl:'https://picsum.photos/seed/a034/200'},
+  {id:'A035',name:'冰源果',grade:'不朽级奇珍',basePrice:5000000,currentBid:9200000,timeLeft:'16天05小时',lore:'生长在绝对零度地带的果实，能洗涤灵魂杂质。',imageUrl:'https://picsum.photos/seed/a035/200'},
+  {id:'A036',name:'炎魔之心',grade:'封侯不朽级',basePrice:15000000,currentBid:25000000,timeLeft:'26天00小时',lore:'特殊能量生命炎魔一族的能量核心，如同微缩的恒星。',imageUrl:'https://picsum.photos/seed/a036/200'},
+  {id:'A037',name:'空间乱流之心',grade:'尊者级材料',basePrice:45000000,currentBid:78000000,timeLeft:'60天00小时',lore:'炼制空间类重宝的核心材料，极度危险。',imageUrl:'https://picsum.photos/seed/a037/200'},
+  {id:'A038',name:'时间之沙',grade:'尊者级材料',basePrice:55000000,currentBid:95000000,timeLeft:'75天00小时',lore:'时间本源法则显化的实体，周围的时间流速永远混乱。',imageUrl:'https://picsum.photos/seed/a038/200'},
+  {id:'A039',name:'时空之印残片',grade:'宇宙之主级',basePrice:90000000,currentBid:180000000,timeLeft:'120天00小时',lore:'涉及彻底逆转时空的不可思议兵器的碎片。',imageUrl:'https://picsum.photos/seed/a039/200'},
+  {id:'A040',name:'封王不朽兵器套装',grade:'封王不朽级',basePrice:30000000,currentBid:55000000,timeLeft:'40天00小时',lore:'一套完整且历经战争洗礼的顶级重宝套装。',imageUrl:'https://picsum.photos/seed/a040/200'},
+  {id:'A041',name:'劫甲(将甲残片)',grade:'宇宙最强者级',basePrice:150000000,currentBid:300000000,timeLeft:'150天00小时',lore:'坐山客炼制的超级战甲最低级的一块残片，赋予千万倍界主力。',imageUrl:'https://picsum.photos/seed/a041/200'},
+  {id:'A042',name:'星辰塔(仿品)',grade:'至宝级',basePrice:200000000,currentBid:450000000,timeLeft:'180天00小时',lore:'九劫秘典传承地的微缩仿品，具有镇压时空的威能。',imageUrl:'https://picsum.photos/seed/a042/200'},
+  {id:'A043',name:'弑吴羽翼(单翼)',grade:'至强至宝残件',basePrice:500000000,currentBid:999000000,timeLeft:'300天00小时',lore:'机械流超级单体至宝的一侧羽翼，足以切碎微型宇宙。',imageUrl:'https://picsum.photos/seed/a043/200'},
+  {id:'A044',name:'焱神戟',grade:'顶级至宝',basePrice:120000000,currentBid:280000000,timeLeft:'110天00小时',lore:'焱神族首领曾使用的狂暴兵器，焚天灭地。',imageUrl:'https://picsum.photos/seed/a044/200'},
+  {id:'A045',name:'原始宇宙本源晶',grade:'真神级',basePrice:800000000,currentBid:1500000000,timeLeft:'365天00小时',lore:'原始宇宙最初诞生时溢出的一丝绝对本源。',imageUrl:'https://picsum.photos/seed/a045/200'},
+  {id:'A046',name:'祖神教护教令牌',grade:'真神级',basePrice:400000000,currentBid:850000000,timeLeft:'220天00小时',lore:'持有此令，可调用部分原始宇宙本源意志进行降维打击。',imageUrl:'https://picsum.photos/seed/a046/200'},
+  {id:'A047',name:'混沌城主手札',grade:'宇宙之主级',basePrice:100000000,currentBid:220000000,timeLeft:'88天00小时',lore:'人类族群伟大领袖关于时间、空间双本源法则的终极心得。',imageUrl:'https://picsum.photos/seed/a047/200'},
+  {id:'A048',name:'匠神主轴',grade:'至强至宝',basePrice:600000000,currentBid:1200000000,timeLeft:'280天00小时',lore:'匠神星的绝对核心，能锻造宇宙万物的神级车床核心。',imageUrl:'https://picsum.photos/seed/a048/200'},
+  {id:'A049',name:'浑源灵液',grade:'超越真神级',basePrice:999999999,currentBid:2500000000,timeLeft:'500天00小时',lore:'跳出樊笼，触及源世界的至高灵魂洗涤神物。',imageUrl:'https://picsum.photos/seed/a049/200'},
+  {id:'A050',name:'列元术(残卷)',grade:'浑源级',basePrice:5000000000,currentBid:9999999999,timeLeft:'999天99小时',lore:'元所留下的意志秘术的开篇，凡人直视即陷入永恒寂灭。',imageUrl:'https://picsum.photos/seed/a050/200'}
+];
+
+// ===== 状态管理 =====
+let currentItemId = null;
+let auctionItems = [];
+// 虚空托管：记录用户当前托管的出价 { itemId, amount }
+let currentUserBid = null;
+
+// 从 EconomyManager 初始化余额（首次访问设置初始值）
+function ensureInitialBalance() {
+  if (EconomyManager.getBalance() === 0) {
+    EconomyManager.setBalance(100000);
+  }
+}
+
+// ===== 初始化 =====
+function init() {
+  ensureInitialBalance();
+  auctionItems = FALLBACK_AUCTION_DATA.map(d => ({
+    ...d,
+    minBid: Math.ceil(d.currentBid * 1.1),
+    countdown: parseTimeLeft(d.timeLeft),
+  }));
+  auctionItems.sort((a, b) => b.currentBid - a.currentBid);
+  renderBoard();
+  updateBalance();
+  createStarfield();
+  bindEvents();
+  // 监听 EconomyManager 余额变化（跨页面同步）
+  EconomyManager.onChange(() => {
+    updateBalance();
+    updateModalBalance();
+  });
+}
+
+// ===== 星空背景 =====
+function createStarfield() {
+  const container = document.getElementById('starfield');
+  for (let i = 0; i < 180; i++) {
+    const star = document.createElement('div');
+    star.className = 'star';
+    const size = Math.random() * 2.5 + 0.5;
+    star.style.cssText = `
+      width:${size}px;height:${size}px;
+      left:${Math.random()*100}%;top:${Math.random()*100}%;
+      --dur:${Math.random()*8+4}s;
+      opacity:${Math.random()*0.6+0.2};
+      animation-delay:${Math.random()*6}s;
+    `;
+    container.appendChild(star);
+  }
+}
+
+// ===== 解析倒计时 =====
+function parseTimeLeft(timeStr) {
+  const match = timeStr.match(/(\d+)天?(\d+)小时/);
+  if (!match) return 0;
+  return parseInt(match[1]) * 86400 + parseInt(match[2]) * 3600;
+}
+
+// ===== 渲染拍卖列表 =====
+function renderBoard() {
+  const board = document.getElementById('monolith-board');
+  board.innerHTML = '';
+  auctionItems.forEach((item, idx) => {
+    const rankClass = idx === 0 ? 'gold' : idx === 1 ? 'purple' : idx === 2 ? 'red' : '';
+    const tierClass = item.grade.includes('不朽') || item.grade.includes('宇宙') ? 'ssr' : item.grade.includes('恒星') || item.grade.includes('神级') ? 'sr' : '';
+    const div = document.createElement('div');
+    div.className = 'auction-item';
+    div.dataset.id = item.id;
+    div.innerHTML = `
+      <div class="rank ${rankClass}">${idx < 3 ? ['🥇','🥈','🥉'][idx] : String(idx+1).padStart(2,'0')}</div>
+      <img class="thumb" src="${item.imageUrl}" alt="${item.name}" loading="lazy" />
+      <div class="item-info">
+        <div class="item-name">${item.name}</div>
+        <div class="item-tier ${tierClass}">${item.grade}</div>
+      </div>
+      <div class="item-bid-info">
+        <div class="current-price">${formatNum(item.currentBid)} ✦</div>
+        <div class="countdown" data-seconds="${item.countdown}">${item.timeLeft}</div>
+      </div>
+    `;
+    div.addEventListener('click', () => openModal(item.id));
+    board.appendChild(div);
+  });
+}
+
+function formatNum(n) {
+  return String(n).replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+}
+
+// ===== 弹窗逻辑 =====
+function openModal(id) {
+  const item = auctionItems.find(i => i.id === id);
+  if (!item) return;
+  currentItemId = id;
+  document.getElementById('modal-img').src = item.imageUrl;
+  document.getElementById('modal-name').textContent = item.name;
+  document.getElementById('modal-tier').textContent = item.grade;
+  document.getElementById('modal-tier').className = 'item-tier ' +
+    (item.grade.includes('不朽') || item.grade.includes('宇宙') ? 'ssr' : item.grade.includes('恒星') ? 'sr' : '');
+  document.getElementById('modal-lore').textContent = item.lore;
+  document.getElementById('modal-highest-price').textContent = formatNum(item.currentBid);
+  document.getElementById('bid-input').value = '';
+  document.getElementById('bid-input').placeholder = `最低出价 ${formatNum(item.minBid)} ✦`;
+  updateModalBalance();
+  document.getElementById('modal-overlay').classList.add('active');
+}
+
+function closeModal() {
+  document.getElementById('modal-overlay').classList.remove('active');
+  currentItemId = null;
+}
+
+// ===== 余额更新（统一从 EconomyManager 读取） =====
+function updateBalance() {
+  const balance = EconomyManager.getBalance();
+  const el = document.getElementById('hud-balance-val');
+  if (el) el.textContent = formatNum(balance);
+}
+function updateModalBalance() {
+  const balance = EconomyManager.getBalance();
+  document.getElementById('modal-balance').textContent = formatNum(balance);
+}
+
+// ===== 出价校验 =====
+function submitBid() {
+  const item = auctionItems.find(i => i.id === currentItemId);
+  if (!item) return;
+  const input = document.getElementById('bid-input');
+  const bid = parseInt(input.value);
+  if (!bid || isNaN(bid) || bid < 1) {
+    showToast('请输入有效出价金额', 'error');
+    return;
+  }
+  if (bid < item.minBid) {
+    showToast(`出价不能低于 ${formatNum(item.minBid)} ✦（当前价×1.1）`, 'error');
+    return;
+  }
+  if (bid > EconomyManager.getBalance()) {
+    showToast('余额不足，无法出价', 'error');
+    return;
+  }
+  // 虚空托管：扣除星辰 + 记录托管状态
+  const success = EconomyManager.spendStardust(bid);
+  if (!success) {
+    showToast('虚空契约验证失败，余额不足', 'error');
+    return;
+  }
+  currentUserBid = { itemId: item.id, amount: bid };
+  item.currentBid = bid;
+  item.minBid = Math.ceil(bid * 1.1);
+  updateBalance();
+  updateModalBalance();
+  document.getElementById('modal-highest-price').textContent = formatNum(bid);
+  input.placeholder = `最低出价 ${formatNum(item.minBid)} ✦`;
+  input.value = '';
+  // 重新排序
+  auctionItems.sort((a, b) => b.currentBid - a.currentBid);
+  renderBoard();
+  // 余额动画
+  const box = document.querySelector('.balance-box');
+  if (box) { box.classList.add('is-boosting'); setTimeout(() => box.classList.remove('is-boosting'), 400); }
+  showToast(`出价成功！${formatNum(bid)} ✦ 已托管至虚空`, 'success');
+}
+
+// ===== 快捷按钮 =====
+function plusTenPercent() {
+  const item = auctionItems.find(i => i.id === currentItemId);
+  if (!item) return;
+  const bid = item.minBid;
+  document.getElementById('bid-input').value = bid;
+}
+
+function allIn() {
+  document.getElementById('bid-input').value = EconomyManager.getBalance();
+}
+
+// ===== Toast =====
+function showToast(msg, type = '') {
+  const container = document.getElementById('toast-container');
+  const toast = document.createElement('div');
+  toast.className = 'toast' + (type ? ' ' + type : '');
+  toast.textContent = msg;
+  container.appendChild(toast);
+  setTimeout(() => {
+    toast.classList.add('fade-out');
+    setTimeout(() => toast.remove(), 400);
+  }, 2500);
+}
+
+// ===== 模拟被超越 (Refund 机制) =====
+function simulateOutbid() {
+  if (!currentItemId) {
+    showToast('请先打开一个拍卖条目弹窗', 'error');
+    return;
+  }
+  if (!currentUserBid) {
+    showToast('你当前没有托管中的出价', 'error');
+    return;
+  }
+  const refundAmount = currentUserBid.amount;
+  const item = auctionItems.find(i => i.id === currentItemId);
+  if (!item) return;
+  const fakeBid = item.minBid + Math.floor(Math.random() * item.currentBid * 0.3);
+  item.currentBid = fakeBid;
+  item.minBid = Math.ceil(fakeBid * 1.1);
+  auctionItems.sort((a, b) => b.currentBid - a.currentBid);
+  renderBoard();
+  document.getElementById('modal-highest-price').textContent = formatNum(fakeBid);
+  document.getElementById('bid-input').placeholder = `最低出价 ${formatNum(item.minBid)} ✦`;
+  // 退款：通过 EconomyManager 将托管的星辰退回账户
+  currentUserBid = null;
+  EconomyManager.addStardust(refundAmount);
+  showToast(`意志被碾压，契约易主，${formatNum(refundAmount)} 星辰已退回账户`, 'refund');
+}
+
+// ===== 事件绑定 =====
+function bindEvents() {
+  document.getElementById('modal-close-btn').addEventListener('click', closeModal);
+  document.getElementById('modal-overlay').addEventListener('click', (e) => {
+    if (e.target === document.getElementById('modal-overlay')) closeModal();
+  });
+  document.getElementById('btn-submit-bid').addEventListener('click', submitBid);
+  document.getElementById('btn-plus10').addEventListener('click', plusTenPercent);
+  document.getElementById('btn-allin').addEventListener('click', allIn);
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') closeModal();
+    if (e.key === 'Enter' && currentItemId) submitBid();
+  });
+  // 倒计时实时更新
+  setInterval(() => {
+    document.querySelectorAll('.countdown[data-seconds]').forEach(el => {
+      let s = parseInt(el.dataset.seconds);
+      if (s <= 0) { el.textContent = '已结束'; el.classList.add('urgent'); return; }
+      s--;
+      el.dataset.seconds = s;
+      const d = Math.floor(s / 86400);
+      const h = Math.floor((s % 86400) / 3600);
+      const m = Math.floor((s % 3600) / 60);
+      el.textContent = d > 0 ? `${d}天${h}小时` : h > 0 ? `${h}小时${m}分` : `${m}分${s%60}秒`;
+      if (s < 3600) el.classList.add('urgent');
+    });
+  }, 1000);
+}
+
+// 启动
+init();
+</script>
+</body>
+</html>

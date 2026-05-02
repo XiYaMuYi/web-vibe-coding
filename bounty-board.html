@@ -4,838 +4,759 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
     <meta name="theme-color" content="#020205" />
-    <title>Bounty Board Portal</title>
+    <title>悬赏中枢</title>
     <style>
       :root {
         color-scheme: dark;
+        --panel-bg: rgba(10, 15, 30, 0.85);
+        --panel-border: rgba(0, 240, 255, 0.15);
       }
-
-      html,
+      * { box-sizing: border-box; }
+      html, body { margin: 0; width: 100%; height: 100%; overflow: hidden; background: #020205; font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; color: #eafcff; }
       body {
-        margin: 0;
-        width: 100%;
-        height: 100%;
-        overflow: hidden;
-        background: #020205;
-        font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-      }
-
-      body {
-        color: #eafcff;
-      }
-
-      .shell {
-        position: relative;
-        width: 100vw;
-        height: 100vh;
-        overflow: hidden;
         background:
           radial-gradient(circle at 50% 40%, rgba(26, 31, 46, 0.98) 0%, rgba(10, 14, 24, 0.96) 30%, rgba(4, 6, 12, 0.98) 56%, #020205 100%),
           radial-gradient(circle at 20% 18%, rgba(0, 240, 255, 0.12), transparent 18%),
           radial-gradient(circle at 78% 26%, rgba(107, 75, 255, 0.12), transparent 20%),
           radial-gradient(circle at 50% 80%, rgba(255, 255, 255, 0.04), transparent 22%);
       }
+      body::before { content:''; position:fixed; inset:-20%; pointer-events:none; background:
+        radial-gradient(circle at 18% 28%, rgba(255,255,255,0.09) 0 1px, transparent 1.5px),
+        radial-gradient(circle at 68% 16%, rgba(255,255,255,0.07) 0 1px, transparent 1.5px),
+        radial-gradient(circle at 82% 72%, rgba(255,255,255,0.08) 0 1px, transparent 1.5px),
+        radial-gradient(circle at 40% 74%, rgba(0,240,255,0.08) 0 1px, transparent 1.7px),
+        radial-gradient(circle at 52% 48%, rgba(107,75,255,0.08) 0 1px, transparent 1.8px);
+        opacity:.48; filter: blur(.2px); animation: driftStars 26s linear infinite; }
+      body::after { content:''; position:fixed; inset:0; pointer-events:none; background: radial-gradient(circle at center, transparent 0 20%, rgba(0,0,0,0.2) 50%, rgba(0,0,0,0.4) 100%), radial-gradient(circle at 50% 42%, rgba(0,240,255,0.06), transparent 28%); }
+      @keyframes driftStars { 0% { transform: translate3d(0,0,0) scale(1);} 50% { transform: translate3d(1.2%,-0.8%,0) scale(1.02);} 100% { transform: translate3d(0,0,0) scale(1);} }
 
-      .shell::before,
-      .shell::after {
-        content: '';
-        position: absolute;
-        inset: -20%;
-        pointer-events: none;
-      }
+      .page-shell { position:fixed; inset:0; display:grid; grid-template-rows:auto 1fr; overflow:hidden; }
+      .top-bar { display:flex; align-items:center; justify-content:space-between; padding:12px 20px; border-bottom:1px solid rgba(255,255,255,0.06); background:rgba(10,15,30,0.7); backdrop-filter:blur(12px); z-index:10; }
+      .top-bar h1 { margin:0; font-size:clamp(16px,2vw,24px); letter-spacing:.1em; text-shadow:0 0 12px rgba(0,240,255,.3); }
+      .top-bar .actions { display:flex; gap:10px; }
+      .balance-chip { display:flex; align-items:center; gap:6px; padding:6px 14px; border-radius:12px; background:rgba(255,255,255,.04); border:1px solid rgba(255,255,255,.08); font-size:14px; }
+      .delivery-btn { appearance:none; border:0; outline:none; border-radius:10px; padding:8px 14px; cursor:pointer; color:#dffcff; background:linear-gradient(135deg,rgba(0,240,255,.2),rgba(107,75,255,.22)); border:1px solid rgba(255,255,255,.1); box-shadow:0 4px 16px rgba(0,0,0,.4); transition:all .3s ease; }
+      .delivery-btn:hover { transform:translateY(-1px); box-shadow:0 6px 24px rgba(0,0,0,.5),0 0 18px rgba(0,240,255,.2); }
 
-      .shell::before {
-        background:
-          radial-gradient(circle at 18% 28%, rgba(255, 255, 255, 0.09) 0 1px, transparent 1.5px),
-          radial-gradient(circle at 68% 16%, rgba(255, 255, 255, 0.07) 0 1px, transparent 1.5px),
-          radial-gradient(circle at 82% 72%, rgba(255, 255, 255, 0.08) 0 1px, transparent 1.5px),
-          radial-gradient(circle at 40% 74%, rgba(0, 240, 255, 0.08) 0 1px, transparent 1.7px),
-          radial-gradient(circle at 52% 48%, rgba(107, 75, 255, 0.08) 0 1px, transparent 1.8px);
-        opacity: 0.48;
-        filter: blur(0.2px);
-        animation: driftStars 26s linear infinite;
-      }
+      .board-layout { display:grid; grid-template-columns:280px 1fr; overflow:hidden; border:1px solid rgba(0,240,255,.25); border-radius: 20px; margin: 12px; box-shadow: 0 0 40px rgba(0,240,255,.1); }
+      .board-sidebar { padding:20px; overflow-y:auto; border-right:1px solid rgba(255,255,255,.05); background:rgba(10,15,30,.4); }
+      .board-sidebar::-webkit-scrollbar { width:8px; }
+      .board-sidebar::-webkit-scrollbar-thumb { background:rgba(0,240,255,.18); border-radius:999px; }
+      .board-sidebar::-webkit-scrollbar-track { background:rgba(255,255,255,.02); }
 
-      .shell::after {
-        background:
-          radial-gradient(circle at center, transparent 0 34%, rgba(0, 0, 0, 0.38) 60%, rgba(0, 0, 255, 0.72) 100%),
-          radial-gradient(circle at 50% 42%, rgba(0, 240, 255, 0.06), transparent 28%);
-        opacity: 1;
-      }
+      .board-content { padding:20px; overflow-y:auto; }
+      .board-content::-webkit-scrollbar { width:8px; }
+      .board-content::-webkit-scrollbar-thumb { background:rgba(0,240,255,.18); border-radius:999px; }
+      .board-content::-webkit-scrollbar-track { background:rgba(255,255,255,.02); }
 
-      .back-btn {
-        position: fixed;
-        left: 16px;
-        top: 12px;
-        z-index: 90;
-        appearance: none;
-        -webkit-appearance: none;
-        border: 0;
-        outline: none;
-        border-radius: 8px;
-        padding: 6px 12px;
-        cursor: pointer;
-        color: #dffcff;
-        background: rgba(0, 240, 255, 0.08);
-        backdrop-filter: blur(12px);
-        -webkit-backdrop-filter: blur(12px);
-        border: 1px solid rgba(255, 255, 255, 0.1);
-        box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.5), 0 0 18px rgba(0, 240, 255, 0.12);
-        text-shadow: 0 0 12px rgba(0, 240, 255, 0.55);
-        transition: all 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
-        font-size: 12px;
-        letter-spacing: 0.06em;
-      }
+      .section-title { font-size:13px; letter-spacing:.12em; color:rgba(0,240,255,.65); text-transform:uppercase; margin-bottom:14px; }
 
-      .back-btn:hover {
-        transform: translateY(-1px);
-        background: rgba(0, 240, 255, 0.12);
-        box-shadow: 0 10px 40px rgba(0, 0, 0, 0.55), 0 0 28px rgba(0, 240, 255, 0.22);
-      }
+      .chip { padding:12px 14px; border-radius:14px; background:rgba(255,255,255,.04); border:1px solid rgba(255,255,255,.08); box-shadow:0 4px 16px rgba(0,0,0,.3); margin-bottom:12px; }
+      .chip .label { display:block; font-size:10px; letter-spacing:.12em; color:rgba(0,240,255,.6); margin-bottom:4px; text-transform:uppercase; }
+      .chip .value { font-size:16px; }
 
-      #bounty-overlay {
-        width: 90vw;
-        height: 85vh;
-        position: fixed;
-        top: 50%;
-        left: 50%;
-        transform: translate(-50%, -50%);
-        z-index: 100;
-        background: rgba(10, 15, 30, 0.85);
-        backdrop-filter: blur(20px);
-        -webkit-backdrop-filter: blur(20px);
-        border: 1px solid rgba(0, 240, 255, 0.15);
-        border-radius: 24px;
-        display: flex;
-        overflow: hidden;
-        box-shadow: 0 24px 72px rgba(0, 0, 0, 0.48), 0 0 90px rgba(0, 240, 255, 0.08);
-      }
+      .filter-row { display:flex; gap:8px; flex-wrap:wrap; margin-bottom:16px; }
+      .filter-btn { appearance:none; border:0; outline:none; border-radius:10px; padding:6px 14px; cursor:pointer; color:rgba(255,255,255,.6); background:rgba(255,255,255,.06); border:1px solid rgba(255,255,255,.08); font-size:12px; letter-spacing:.06em; transition:all .3s ease; }
+      .filter-btn:hover { color:#eafcff; background:rgba(0,240,255,.1); }
+      .filter-btn.is-active { color:#dffcff; background:linear-gradient(135deg,rgba(0,240,255,.18),rgba(107,75,255,.2)); border-color:rgba(0,240,255,.3); }
 
-      /* ── Left Panel: Holographic Board ── */
-      .board-panel {
-        flex: 6;
-        padding: 28px 32px;
-        overflow-y: auto;
-        position: relative;
-        min-height: 0;
-      }
+      .bounty-board-grid { position:relative; min-height:500px; }
+      .bounty-card { position:absolute; border-radius:16px; overflow:hidden; background:rgba(10,15,30,.85); border:1px solid rgba(255,255,255,.08); box-shadow:0 12px 40px rgba(0,0,0,.5); transition:all .4s cubic-bezier(.23,1,.32,1); cursor:pointer; }
+      .bounty-card:hover { transform:translateY(-4px) scale(1.02); box-shadow:0 16px 48px rgba(0,0,0,.6),0 0 24px rgba(0,240,255,.12); z-index:5; }
+      .bounty-card img { width:100%; height:120px; object-fit:cover; border-bottom:1px solid rgba(255,255,255,.06); }
+      .bounty-info { padding:10px; }
+      .bounty-info h3 { margin:0 0 4px; font-size:13px; font-weight:600; letter-spacing:.04em; }
+      .bounty-lore { margin:0 0 8px; font-size:10px; color:rgba(255,255,255,.5); line-height:1.4; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; }
+      .bounty-tags { display:flex; gap:4px; margin-bottom:6px; }
+      .rarity-tag { padding:2px 6px; border-radius:4px; font-size:9px; font-weight:700; letter-spacing:.08em; }
+      .rarity-SSR { background:linear-gradient(135deg,rgba(255,200,50,.25),rgba(255,140,50,.2)); color:#ffd700; border:1px solid rgba(255,200,50,.3); }
+      .rarity-SR { background:rgba(160,120,255,.18); color:#b48eff; border:1px solid rgba(160,120,255,.25); }
+      .rarity-R { background:rgba(0,240,255,.1); color:rgba(0,240,255,.75); border:1px solid rgba(0,240,255,.18); }
+      .bounty-meta { display:flex; justify-content:space-between; font-size:11px; color:rgba(255,255,255,.5); }
+      .bounty-meta .reward { color:rgba(0,240,255,.8); font-weight:600; }
+      .bounty-actions { display:flex; gap:6px; padding:8px 10px; border-top:1px solid rgba(255,255,255,.05); }
+      .small-btn { appearance:none; border:0; outline:none; border-radius:8px; padding:5px 10px; cursor:pointer; color:#dffcff; background:linear-gradient(135deg,rgba(0,240,255,.18),rgba(107,75,255,.2)); border:1px solid rgba(255,255,255,.08); font-size:11px; transition:all .25s ease; }
+      .small-btn:hover { transform:translateY(-1px); box-shadow:0 4px 12px rgba(0,240,255,.2); }
+      .ghost-btn { appearance:none; border:0; outline:none; border-radius:8px; padding:5px 10px; cursor:pointer; color:rgba(255,255,255,.55); background:transparent; font-size:11px; transition:all .25s ease; }
+      .ghost-btn:hover { color:#eafcff; }
 
-      .board-panel::-webkit-scrollbar {
-        width: 10px;
-      }
+      .create-panel { margin-top:20px; }
+      .create-panel textarea, .create-panel input[type=number] { width:100%; background:rgba(255,255,255,.04); border:1px solid rgba(255,255,255,.1); border-radius:10px; padding:10px; color:#eafcff; font-size:13px; outline:none; resize:vertical; }
+      .create-panel textarea { min-height:80px; font-family:inherit; margin-bottom:8px; }
+      .create-panel input[type=number] { margin-bottom:8px; }
+      .create-panel textarea:focus, .create-panel input[type=number]:focus { border-color:rgba(0,240,255,.35); }
 
-      .board-panel::-webkit-scrollbar-track {
-        background: rgba(255, 255, 255, 0.03);
-      }
+      .image-preview { display:none; margin-top:8px; }
+      .image-preview.is-visible { display:block; }
+      .image-preview img { width:100%; max-height:160px; object-fit:cover; border-radius:10px; border:1px solid rgba(255,255,255,.08); }
 
-      .board-panel::-webkit-scrollbar-thumb {
-        background: rgba(0, 240, 255, 0.22);
-        border-radius: 999px;
-      }
+      .drop-zone { display:flex; align-items:center; justify-content:center; height:80px; border:2px dashed rgba(0,240,255,.2); border-radius:10px; cursor:pointer; transition:all .3s ease; font-size:12px; color:rgba(255,255,255,.4); margin-bottom:8px; }
+      .drop-zone:hover { border-color:rgba(0,240,255,.4); background:rgba(0,240,255,.04); }
+      .drop-zone.is-dragover { border-color:rgba(0,240,255,.5); background:rgba(0,240,255,.08); }
 
-      .board-title {
-        margin: 0 0 20px;
-        font-size: clamp(20px, 2.2vw, 28px);
-        letter-spacing: 0.08em;
-        text-shadow: 0 0 14px rgba(0, 240, 255, 0.35), 0 0 26px rgba(0, 240, 255, 0.12);
-        animation: titleFloat 4s ease-in-out infinite;
-      }
+      .submit-btn { width:100%; appearance:none; border:0; outline:none; border-radius:12px; padding:12px; cursor:pointer; color:#dffcff; background:linear-gradient(135deg,rgba(0,240,255,.2),rgba(107,75,255,.22)); border:1px solid rgba(255,255,255,.1); font-size:14px; letter-spacing:.06em; box-shadow:0 6px 20px rgba(0,0,0,.4); transition:all .3s ease; }
+      .submit-btn:hover:not(:disabled) { transform:translateY(-1px); box-shadow:0 8px 28px rgba(0,0,0,.5),0 0 18px rgba(0,240,255,.15); }
+      .submit-btn:disabled { opacity:.5; cursor:not-allowed; }
 
-      .board-container {
-        position: relative;
-        width: 100%;
-        min-height: 400px;
-      }
+      .form-status { display:none; padding:10px; border-radius:10px; margin-top:10px; font-size:12px; line-height:1.5; }
+      .form-status.is-visible { display:block; }
+      .form-status.success { border:1px solid rgba(0,240,255,.25); background:rgba(0,240,255,.08); color:rgba(202,253,255,.92); }
+      .form-status.error { border:1px solid rgba(255,140,140,.28); background:rgba(255,90,90,.08); color:rgba(255,220,220,.94); }
 
-      .bounty-card {
-        position: absolute;
-        width: 175px;
-        border-radius: 10px;
-        background: rgba(10, 14, 28, 0.78);
-        border: 1px solid rgba(0, 240, 255, 0.25);
-        box-shadow: 0 6px 24px rgba(0, 0, 0, 0.45), 0 0 12px rgba(0, 240, 255, 0.06);
-        overflow: hidden;
-        cursor: pointer;
-        transition: transform 0.45s cubic-bezier(0.25, 0.46, 0.45, 0.94),
-                    box-shadow 0.45s ease,
-                    z-index 0s;
-        z-index: 1;
-      }
+      @keyframes shake { 0%,100%{transform:translateX(0)} 20%,60%{transform:translateX(-6px)} 40%,80%{transform:translateX(6px)} }
+      .shake { animation:shake .6s ease-in-out; }
 
-      .bounty-card:hover {
-        transform: rotate(0deg) scale(1.08) !important;
-        z-index: 80 !important;
-        box-shadow: 0 16px 48px rgba(0, 0, 0, 0.5), 0 0 36px rgba(0, 240, 255, 0.22);
-        border-color: rgba(0, 240, 255, 0.6);
-      }
+      .back-btn { position:fixed; left:16px; top:12px; z-index:120; appearance:none; border:0; outline:none; border-radius:10px; padding:8px 14px; cursor:pointer; color:#dffcff; background:rgba(0,240,255,.08); border:1px solid rgba(255,255,255,.1); box-shadow:0 4px 16px rgba(0,0,0,.4); }
 
-      .bounty-card img {
-        width: 100%;
-        height: 110px;
-        object-fit: cover;
-        display: block;
-      }
-
-      .bounty-card-info {
-        padding: 8px 10px;
-      }
-
-      .bounty-card-info h3 {
-        margin: 0 0 4px;
-        font-size: 12px;
-        color: #f4fbff;
-        text-shadow: 0 0 8px rgba(0, 240, 255, 0.18);
-        line-height: 1.3;
-      }
-
-      .bounty-card-info p {
-        margin: 0 0 6px;
-        font-size: 10px;
-        color: rgba(255, 255, 255, 0.55);
-        line-height: 1.4;
-      }
-
-      .bounty-reward {
-        display: inline-flex;
-        align-items: center;
-        gap: 3px;
-        padding: 3px 8px;
-        border-radius: 999px;
-        font-size: 10px;
-        letter-spacing: 0.1em;
-        color: #00f0ff;
-        border: 1px solid rgba(0, 240, 255, 0.22);
-        background: rgba(0, 240, 255, 0.08);
-        text-shadow: 0 0 8px rgba(0, 240, 255, 0.4);
-      }
-
-      .bounty-time {
-        display: block;
-        font-size: 9px;
-        color: rgba(255, 255, 255, 0.3);
-        margin-top: 5px;
-        letter-spacing: 0.04em;
-      }
-
-      /* ── Right Panel: Submission Terminal ── */
-      .terminal-panel {
-        flex: 4;
-        padding: 28px 32px;
-        border-left: 1px solid rgba(255, 255, 255, 0.05);
-        display: flex;
-        flex-direction: column;
-        overflow-y: auto;
-        min-height: 0;
-      }
-
-      .terminal-title {
-        margin: 0 0 20px;
-        font-size: clamp(16px, 1.8vw, 22px);
-        letter-spacing: 0.08em;
-        text-shadow: 0 0 14px rgba(0, 240, 255, 0.35), 0 0 26px rgba(0, 240, 255, 0.12);
-      }
-
-      .terminal-form {
-        display: flex;
-        flex-direction: column;
-        gap: 20px;
-        flex: 1;
-      }
-
-      .glow-field {
-        position: relative;
-      }
-
-      .glow-field label {
-        display: block;
-        font-size: 11px;
-        letter-spacing: 0.1em;
-        color: rgba(0, 240, 255, 0.6);
-        margin-bottom: 6px;
-        text-transform: uppercase;
-      }
-
-      .glow-field textarea,
-      .glow-field input[type="text"] {
-        width: 100%;
-        box-sizing: border-box;
-        border: 0;
-        border-bottom: 2px solid rgba(0, 240, 255, 0.18);
-        background: transparent;
-        color: #eafcff;
-        font-size: 13px;
-        font-family: inherit;
-        padding: 8px 2px;
-        outline: none;
-        transition: border-color 0.3s ease, box-shadow 0.3s ease;
-        resize: none;
-      }
-
-      .glow-field textarea:focus,
-      .glow-field input[type="text"]:focus {
-        border-bottom-color: rgba(0, 240, 255, 0.6);
-        box-shadow: 0 4px 16px rgba(0, 240, 255, 0.15);
-      }
-
-      .glow-field textarea::placeholder,
-      .glow-field input[type="text"]::placeholder {
-        color: rgba(234, 252, 255, 0.3);
-      }
-
-      .drop-zone {
-        border: 2px dashed rgba(0, 240, 255, 0.2);
-        border-radius: 14px;
-        padding: 24px 14px;
-        text-align: center;
-        cursor: pointer;
-        transition: border-color 0.3s ease, background 0.3s ease;
-        background: rgba(0, 240, 255, 0.02);
-        min-height: 90px;
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        justify-content: center;
-        gap: 6px;
-      }
-
-      .drop-zone:hover,
-      .drop-zone.drag-over {
-        border-color: rgba(0, 240, 255, 0.5);
-        background: rgba(0, 240, 255, 0.06);
-      }
-
-      .drop-zone-text {
-        font-size: 12px;
-        color: rgba(234, 252, 255, 0.5);
-        line-height: 1.5;
-      }
-
-      .drop-zone-icon {
-        font-size: 24px;
-        color: rgba(0, 240, 255, 0.35);
-      }
-
-      .drop-zone input[type="file"] {
-        display: none;
-      }
-
-      .image-preview {
-        max-width: 100%;
-        max-height: 100px;
-        border-radius: 10px;
-        margin-top: 8px;
-        display: none;
-        box-shadow: 0 4px 24px rgba(0, 0, 0, 0.3);
-      }
-
-      .image-preview.visible {
-        display: block;
-      }
-
-      .balance-display {
-        font-size: 11px;
-        color: rgba(0, 240, 255, 0.5);
-        text-align: center;
-        letter-spacing: 0.06em;
-      }
-
-      .submit-btn {
-        appearance: none;
-        -webkit-appearance: none;
-        border: 0;
-        outline: none;
-        border-radius: 14px;
-        padding: 14px 20px;
-        cursor: pointer;
-        color: #dffcff;
-        font-size: 14px;
-        letter-spacing: 0.08em;
-        background: linear-gradient(135deg, rgba(0, 240, 255, 0.25), rgba(107, 75, 255, 0.32));
-        box-shadow: 0 12px 34px rgba(0, 240, 255, 0.18), 0 0 34px rgba(107, 75, 255, 0.12);
-        text-shadow: 0 0 14px rgba(0, 240, 255, 0.6);
-        transition: all 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
-        animation: btnPulse 3s ease-in-out infinite;
-        margin-top: auto;
-      }
-
-      .submit-btn:hover:not(:disabled) {
-        transform: translateY(-2px);
-        box-shadow: 0 16px 48px rgba(0, 240, 255, 0.3), 0 0 52px rgba(0, 240, 255, 0.22);
-        animation: none;
-      }
-
-      .submit-btn:active:not(:disabled) {
-        transform: scale(0.97);
-      }
-
-      .submit-btn:disabled {
-        opacity: 0.5;
-        cursor: not-allowed;
-        animation: none;
-      }
-
-      .submit-btn.shake {
-        animation: btnShake 0.5s ease-in-out;
-        background: linear-gradient(135deg, rgba(255, 80, 80, 0.35), rgba(255, 50, 50, 0.4));
-        box-shadow: 0 12px 34px rgba(255, 80, 80, 0.25), 0 0 34px rgba(255, 50, 50, 0.18);
-        text-shadow: 0 0 14px rgba(255, 80, 80, 0.6);
-        border-color: rgba(255, 80, 80, 0.4);
-      }
-
-      .submit-hint {
-        font-size: 10px;
-        color: rgba(234, 252, 255, 0.3);
-        text-align: center;
-        margin-top: 4px;
-        letter-spacing: 0.06em;
-      }
-
-      .form-status {
-        padding: 8px 12px;
-        border-radius: 10px;
-        font-size: 11px;
-        line-height: 1.4;
-        display: none;
-      }
-
-      .form-status.is-visible {
-        display: block;
-      }
-
-      .form-status.success {
-        background: rgba(0, 240, 255, 0.1);
-        border: 1px solid rgba(0, 240, 255, 0.25);
-        color: rgba(0, 240, 255, 0.9);
-      }
-
-      .form-status.error {
-        background: rgba(255, 120, 120, 0.1);
-        border: 1px solid rgba(255, 120, 120, 0.25);
-        color: rgba(255, 180, 180, 0.9);
-      }
-
-      /* ── Animations ── */
-      @keyframes driftStars {
-        0% { transform: translate3d(0, 0, 0) scale(1); }
-        50% { transform: translate3d(1.2%, -0.8%, 0) scale(1.02); }
-        100% { transform: translate3d(0, 0, 0) scale(1); }
-      }
-
-      @keyframes titleFloat {
-        0%, 100% { transform: translateY(0); }
-        50% { transform: translateY(-4px); }
-      }
-
-      @keyframes btnPulse {
-        0%, 100% { box-shadow: 0 12px 34px rgba(0, 240, 255, 0.18), 0 0 34px rgba(107, 75, 255, 0.12); }
-        50% { box-shadow: 0 12px 34px rgba(0, 240, 255, 0.28), 0 0 48px rgba(0, 240, 255, 0.2), 0 0 64px rgba(107, 75, 255, 0.14); }
-      }
-
-      @keyframes btnShake {
-        0%, 100% { transform: translateX(0); }
-        20% { transform: translateX(-6px); }
-        40% { transform: translateX(6px); }
-        60% { transform: translateX(-4px); }
-        80% { transform: translateX(4px); }
-      }
-
-      @keyframes cardFlyIn {
-        0% {
-          opacity: 0;
-          transform: translateY(calc(var(--fly-y, 40px))) scale(0.85) rotate(calc(var(--card-rotate, 0deg) * -1.5));
-        }
-        60% {
-          opacity: 1;
-        }
-        100% {
-          opacity: 1;
-          transform: translateY(0) scale(var(--card-scale, 1)) rotate(var(--card-rotate, 0deg));
-        }
-      }
+      .modal-overlay { position:fixed; inset:0; z-index:100; display:none; place-items:center; background:rgba(0,0,0,.6); backdrop-filter:blur(8px); }
+      .modal-overlay.is-open { display:grid; }
+      .modal-content { width:min(700px,90vw); max-height:90vh; background:rgba(10,15,30,.92); border:1px solid rgba(0,240,255,.15); border-radius:20px; overflow:hidden; box-shadow:0 24px 72px rgba(0,0,0,.6),0 0 60px rgba(0,240,255,.08); }
+      .modal-hero { position:relative; }
+      .modal-hero img { width:100%; max-height:260px; object-fit:cover; }
+      .modal-body { padding:24px; }
+      .modal-body h2 { margin:0 0 6px; font-size:22px; letter-spacing:.05em; }
+      .modal-body .lore { margin:0 0 14px; font-size:13px; color:rgba(255,255,255,.65); line-height:1.7; }
+      .modal-meta { display:grid; grid-template-columns:repeat(4,1fr); gap:10px; margin-bottom:18px; }
+      .modal-meta .kv { padding:10px; border-radius:10px; background:rgba(255,255,255,.04); border:1px solid rgba(255,255,255,.06); text-align:center; }
+      .modal-meta .k { display:block; font-size:9px; letter-spacing:.12em; color:rgba(0,240,255,.6); text-transform:uppercase; margin-bottom:4px; }
+      .modal-meta .v { font-size:15px; font-weight:600; }
+      .bid-row { display:flex; gap:8px; align-items:center; margin-bottom:10px; }
+      .bid-row input { flex:1; background:rgba(255,255,255,.06); border:1px solid rgba(255,255,255,.1); border-radius:10px; padding:10px; color:#eafcff; font-size:16px; outline:none; }
+      .bid-row input:focus { border-color:rgba(0,240,255,.35); }
+      .bid-presets { display:flex; gap:6px; margin-bottom:14px; }
+      .bid-preset-btn { appearance:none; border:0; outline:none; border-radius:8px; padding:6px 12px; cursor:pointer; color:rgba(255,255,255,.6); background:rgba(255,255,255,.06); border:1px solid rgba(255,255,255,.08); font-size:11px; transition:all .25s ease; }
+      .bid-preset-btn:hover { color:#eafcff; background:rgba(0,240,255,.1); }
+      .bid-actions { display:flex; gap:10px; }
+      .bid-submit { appearance:none; border:0; outline:none; border-radius:12px; padding:10px 20px; cursor:pointer; color:#dffcff; background:linear-gradient(135deg,rgba(0,240,255,.2),rgba(107,75,255,.22)); border:1px solid rgba(255,255,255,.1); font-size:13px; box-shadow:0 4px 16px rgba(0,0,0,.4); transition:all .3s ease; }
+      .bid-submit:hover { transform:translateY(-1px); }
+      .bid-cancel { appearance:none; border:0; outline:none; border-radius:12px; padding:10px 20px; cursor:pointer; color:rgba(255,255,255,.5); background:transparent; border:1px solid rgba(255,255,255,.08); font-size:13px; }
+      .notice { display:none; padding:10px 14px; border-radius:10px; line-height:1.5; font-size:12px; }
+      .notice.is-visible { display:block; }
+      .notice.success { border:1px solid rgba(0,240,255,.25); background:rgba(0,240,255,.08); color:rgba(202,253,255,.92); }
+      .notice.error { border:1px solid rgba(255,140,140,.28); background:rgba(255,90,90,.08); color:rgba(255,220,220,.94); }
 
       @media (max-width: 900px) {
-        #bounty-overlay {
-          width: calc(100vw - 20px);
-          height: 90vh;
-          max-height: 90vh;
-          flex-direction: column;
-          overflow-y: auto;
-          -webkit-overflow-scrolling: touch;
-        }
-
-        .board-panel {
-          flex: none;
-          padding: 20px;
-          min-height: 240px;
-        }
-
-        .terminal-panel {
-          flex: none;
-          border-left: none;
-          border-top: 1px solid rgba(255, 255, 255, 0.05);
-          padding: 20px;
-        }
-
-        .board-container {
-          min-height: 200px;
-        }
-
-        .bounty-card {
-          width: 160px;
-        }
-
-        .bounty-card img {
-          height: 100px;
-        }
+        .board-layout { grid-template-columns:1fr; }
+        .board-sidebar { border-right:0; border-bottom:1px solid rgba(255,255,255,.05); max-height:300px; }
+        .modal-meta { grid-template-columns:repeat(2,1fr); }
       }
     </style>
   </head>
   <body>
-    <div class="shell"></div>
-
-    <button class="back-btn" type="button" onclick="window.location.href='./memorial-wall.html'">&#x27F5; 返回商铺</button>
-
-    <div id="bounty-overlay">
-      <!-- Left: Holographic Board -->
-      <div class="board-panel">
-        <h1 class="board-title">✦ 全息悬赏板 ✦</h1>
-        <div class="board-container" id="board-container"></div>
-      </div>
-
-      <!-- Right: Submission Terminal -->
-      <div class="terminal-panel">
-        <h2 class="terminal-title">✧ 悬赏令提交台</h2>
-        <form class="terminal-form" id="bounty-form" autocomplete="off">
-          <div class="balance-display">当前余额: <span id="balance-val">0</span> ✦ 星尘</div>
-          <div class="glow-field">
-            <label for="bounty-reward">悬赏金额 (星尘)</label>
-            <input type="number" id="bounty-reward" min="1" step="1" placeholder="输入悬赏的星尘数量（正整数）" style="background:transparent;border:none;border-bottom:1px solid rgba(0,240,255,0.3);outline:none;color:#eafcff;padding:8px 0;font-size:14px;width:100%;" />
+    <div class="page-shell">
+      <header class="top-bar">
+        <h1>&#x2727; 悬赏中枢</h1>
+        <div class="actions">
+          <div class="balance-chip">余额 <strong id="balance-val">0</strong> ✦</div>
+          <button class="delivery-btn" id="to-delivery-btn" type="button">进入交付</button>
+        </div>
+      </header>
+      <div class="board-layout">
+        <aside class="board-sidebar">
+          <div class="section-title">契约状态</div>
+          <div class="chip">
+            <span class="label">星辰余额</span>
+            <div class="value"><strong id="balance-val-sidebar">0</strong> ✦</div>
           </div>
-          <div class="glow-field">
-            <label for="bounty-desc">悬赏描述</label>
-            <textarea id="bounty-desc" rows="3" placeholder="描述你想要悬赏的内容..."></textarea>
+          <div class="chip">
+            <span class="label">风险等级</span>
+            <div class="value" id="risk-val">—</div>
           </div>
-          <div class="glow-field">
-            <label>悬赏附图</label>
-            <div class="drop-zone" id="drop-zone">
-              <div class="drop-zone-icon">&#x25C7;</div>
-              <div class="drop-zone-text">
-                点击或拖拽上传图片<br />
-                <span style="font-size:10px; opacity:0.5;">支持 JPG / PNG / WEBP</span>
-              </div>
-              <input type="file" id="bounty-file" accept="image/*" />
-              <img class="image-preview" id="image-preview" alt="预览" />
+          <div class="chip">
+            <span class="label">当前契约</span>
+            <div class="value" id="contract-val">未托管</div>
+          </div>
+
+          <div class="create-panel">
+            <div class="section-title">发布新悬赏</div>
+            <textarea id="bounty-desc" placeholder="描述你的悬赏任务…"></textarea>
+            <input id="bounty-reward" type="number" min="1" placeholder="悬赏金额 (✦)" />
+            <div class="drop-zone" id="drop-zone">拖拽图片至此 或 点击上传</div>
+            <input id="bounty-file" type="file" accept="image/*" hidden />
+            <div class="image-preview" id="image-preview">
+              <img id="preview-img" alt="预览" />
             </div>
+            <button class="submit-btn" id="submit-btn" type="button">✦ 发布悬赏令</button>
+            <div class="form-status" id="form-status"></div>
           </div>
-          <div id="form-status" class="form-status"></div>
-          <button class="submit-btn" type="submit" id="submit-btn">✦ 发布悬赏令</button>
-          <div class="submit-hint">悬赏金额将从你的星尘余额中扣除</div>
-        </form>
+        </aside>
+
+        <main class="board-content">
+          <div class="filter-row">
+            <button class="filter-btn is-active" data-filter="all" type="button">全部</button>
+            <button class="filter-btn" data-filter="available" type="button">待认领</button>
+            <button class="filter-btn" data-filter="escrowed" type="button">托管中</button>
+            <button class="filter-btn" data-filter="completed" type="button">已完成</button>
+          </div>
+          <div class="bounty-board-grid" id="bounty-grid"></div>
+        </main>
+      </div>
+    </div>
+
+    <div class="modal-overlay" id="bounty-modal" role="dialog" aria-modal="true" aria-hidden="true">
+      <div class="modal-content">
+        <div class="modal-hero">
+          <img id="modal-image" alt="悬赏详情" />
+        </div>
+        <div class="modal-body">
+          <h2 id="modal-title"></h2>
+          <p class="lore" id="modal-lore"></p>
+          <div class="modal-meta">
+            <div class="kv"><span class="k">悬赏等级</span><div class="v" id="modal-rarity"></div></div>
+            <div class="kv"><span class="k">交付期限</span><div class="v" id="modal-deadline"></div></div>
+            <div class="kv"><span class="k">当前状态</span><div class="v" id="modal-status"></div></div>
+            <div class="kv"><span class="k">基础赏金</span><div class="v" id="modal-reward"></div></div>
+          </div>
+          <div class="section-title">竞价托管</div>
+          <div class="kv" style="margin-bottom:12px"><span class="k">当前最高</span><div class="v" id="modal-highest"></div></div>
+          <div class="kv" style="margin-bottom:12px"><span class="k">你的出价</span><div class="v" id="modal-userbid"></div></div>
+          <div class="bid-row">
+            <input id="bid-input" type="number" min="1" placeholder="输入托管金额" />
+          </div>
+          <div class="bid-presets">
+            <button class="bid-preset-btn" id="bid-p10" type="button">+10%</button>
+            <button class="bid-preset-btn" id="bid-p25" type="button">+25%</button>
+            <button class="bid-preset-btn" id="bid-p50" type="button">+50%</button>
+            <button class="bid-preset-btn" id="bid-all" type="button">全部</button>
+          </div>
+          <div class="bid-actions">
+            <button class="bid-submit" id="bid-submit" type="button">确认托管</button>
+            <button class="bid-cancel" id="modal-close" type="button">关闭</button>
+          </div>
+          <div class="notice" id="bid-notice"></div>
+        </div>
       </div>
     </div>
 
     <script src="./js/EconomyManager.js"></script>
     <script>
       /* ── State ── */
+      const NEXUS_STATE_KEY = 'bounty_nexus_state';
       let bounties = [];
+      let activeFilter = 'all';
       let uploadedSource = '';
+      let selectedBounty = null;
 
-      /* ── Fallback placeholders (ensures ≥12 cards on board) ── */
+      /* ── Fallback placeholders ── */
       const FALLBACK_BOUNTIES = [
-        { id: 'fb1', description: '寻找失落星辰的旅人，带回三枚光屑即可兑换传说奖励', reward: 500, image_url: 'https://picsum.photos/seed/bounty-star/350/220', created_at: new Date(Date.now() - 3 * 3600000).toISOString() },
-        { id: 'fb2', description: '悬赏：深渊回廊尽头的回声录音，要求无损格式', reward: 800, image_url: 'https://picsum.photos/seed/bounty-echo/350/220', created_at: new Date(Date.now() - 8 * 3600000).toISOString() },
-        { id: 'fb3', description: '求一枚能映照记忆碎片的棱镜，品相不限', reward: 1200, image_url: 'https://picsum.photos/seed/bounty-prism/350/220', created_at: new Date(Date.now() - 1 * 86400000).toISOString() },
-        { id: 'fb4', description: '收集七种不同色温的月光标本，用于炼金实验', reward: 2000, image_url: 'https://picsum.photos/seed/bounty-moon/350/220', created_at: new Date(Date.now() - 2 * 86400000).toISOString() },
-        { id: 'fb5', description: '招募：星际导航员，熟悉暗物质航路者优先', reward: 3500, image_url: 'https://picsum.photos/seed/bounty-nav/350/220', created_at: new Date(Date.now() - 5 * 86400000).toISOString() },
-        { id: 'fb6', description: '高价收购虚空水母活体样本，需冷藏运输', reward: 1500, image_url: 'https://picsum.photos/seed/bounty-jelly/350/220', created_at: new Date(Date.now() - 6 * 3600000).toISOString() },
-        { id: 'fb7', description: '寻人：最后目击于仙女座旋臂的星象师', reward: 6000, image_url: 'https://picsum.photos/seed/bounty-astro/350/220', created_at: new Date(Date.now() - 3 * 86400000).toISOString() },
-        { id: 'fb8', description: '悬赏：完整翻译刻有古神语的石板拓片', reward: 2800, image_url: 'https://picsum.photos/seed/bounty-rune/350/220', created_at: new Date(Date.now() - 12 * 3600000).toISOString() },
-        { id: 'fb9', description: '求购会发光的深海真菌孢子，越多越好', reward: 900, image_url: 'https://picsum.photos/seed/bounty-fungi/350/220', created_at: new Date(Date.now() - 2 * 86400000).toISOString() },
-        { id: 'fb10', description: '征集：星际流浪者的最后家书，真情实感优先', reward: 4000, image_url: 'https://picsum.photos/seed/bounty-letter/350/220', created_at: new Date(Date.now() - 7 * 86400000).toISOString() },
-        { id: 'fb11', description: '悬赏：定位并标记黑洞边缘的引力异常点', reward: 5500, image_url: 'https://picsum.photos/seed/bounty-blackhole/350/220', created_at: new Date(Date.now() - 4 * 86400000).toISOString() },
-        { id: 'fb12', description: '招募梦境潜行者，深入集体潜意识打捞遗失记忆', reward: 3200, image_url: 'https://picsum.photos/seed/bounty-dream/350/220', created_at: new Date(Date.now() - 9 * 86400000).toISOString() },
+        { id: 'fb1', title: '失落星辰的旅人', description: '寻找失落星辰的旅人，带回三枚光屑即可兑换传说奖励', reward: 500, image_url: 'https://picsum.photos/seed/bounty-star/350/220', created_at: new Date(Date.now() - 3 * 3600000).toISOString(), status: 'open' },
+        { id: 'fb2', title: '深渊回廊回声录音', description: '悬赏：深渊回廊尽头的回声录音，要求无损格式', reward: 800, image_url: 'https://picsum.photos/seed/bounty-echo/350/220', created_at: new Date(Date.now() - 8 * 3600000).toISOString(), status: 'open' },
+        { id: 'fb3', title: '记忆棱镜', description: '求一枚能映照记忆碎片的棱镜，品相不限', reward: 1200, image_url: 'https://picsum.photos/seed/bounty-prism/350/220', created_at: new Date(Date.now() - 1 * 86400000).toISOString(), status: 'open' },
+        { id: 'fb4', title: '月光标本收集令', description: '收集七种不同色温的月光标本，用于炼金实验', reward: 2000, image_url: 'https://picsum.photos/seed/bounty-moon/350/220', created_at: new Date(Date.now() - 2 * 86400000).toISOString(), status: 'claimed' },
+        { id: 'fb5', title: '星际导航员招募', description: '招募：星际导航员，熟悉暗物质航路者优先', reward: 3500, image_url: 'https://picsum.photos/seed/bounty-nav/350/220', created_at: new Date(Date.now() - 5 * 86400000).toISOString(), status: 'open' },
+        { id: 'fb6', title: '虚空水母样本', description: '高价收购虚空水母活体样本，需冷藏运输', reward: 1500, image_url: 'https://picsum.photos/seed/bounty-jelly/350/220', created_at: new Date(Date.now() - 6 * 3600000).toISOString(), status: 'completed' },
+        { id: 'fb7', title: '仙女座星象师', description: '寻人：最后目击于仙女座旋臂的星象师', reward: 6000, image_url: 'https://picsum.photos/seed/bounty-astro/350/220', created_at: new Date(Date.now() - 3 * 86400000).toISOString(), status: 'open' },
+        { id: 'fb8', title: '古神语石板拓片', description: '悬赏：完整翻译刻有古神语的石板拓片', reward: 2800, image_url: 'https://picsum.photos/seed/bounty-rune/350/220', created_at: new Date(Date.now() - 12 * 3600000).toISOString(), status: 'claimed' },
+        { id: 'fb9', title: '深海真菌孢子', description: '求购会发光的深海真菌孢子，越多越好', reward: 900, image_url: 'https://picsum.photos/seed/bounty-fungi/350/220', created_at: new Date(Date.now() - 2 * 86400000).toISOString(), status: 'open' },
+        { id: 'fb10', title: '星际流浪者家书', description: '征集：星际流浪者的最后家书，真情实感优先', reward: 4000, image_url: 'https://picsum.photos/seed/bounty-letter/350/220', created_at: new Date(Date.now() - 7 * 86400000).toISOString(), status: 'open' },
+        { id: 'fb11', title: '黑洞引力异常点', description: '悬赏：定位并标记黑洞边缘的引力异常点', reward: 5500, image_url: 'https://picsum.photos/seed/bounty-blackhole/350/220', created_at: new Date(Date.now() - 4 * 86400000).toISOString(), status: 'open' },
+        { id: 'fb12', title: '梦境潜行者', description: '招募梦境潜行者，深入集体潜意识打捞遗失记忆', reward: 3200, image_url: 'https://picsum.photos/seed/bounty-dream/350/220', created_at: new Date(Date.now() - 9 * 86400000).toISOString(), status: 'open' },
       ];
 
-      /* ── Fetch bounties from API ─ */
+      /* ── Write nexus state for delivery page ── */
+      function writeNexusState(bounty, amount, status) {
+        try {
+          const state = JSON.parse(localStorage.getItem(NEXUS_STATE_KEY) || '{}');
+          state.bids = state.bids || {};
+          state.bids[bounty.id] = amount;
+          state.currentUserBid = {
+            itemId: bounty.id,
+            amount,
+            status,
+            signature: '',
+            title: bounty.title || (bounty.description ? bounty.description.slice(0, 20) : '未知契约'),
+            lore: bounty.description || '',
+            rarity: bounty.rarity || getRarity(bounty.reward),
+            image: bounty.image_url || '',
+            reward: bounty.reward,
+            updatedAt: Date.now()
+          };
+          localStorage.setItem(NEXUS_STATE_KEY, JSON.stringify(state));
+          localStorage.setItem('bounty_nexus_active', JSON.stringify(state.currentUserBid));
+        } catch (_) {}
+      }
+
+      /* ── API: Fetch bounties ── */
       async function fetchBounties() {
         try {
           const res = await fetch('/api/bounty');
           const json = await res.json();
           if (json.ok && Array.isArray(json.data)) {
             bounties = json.data;
-          } else {
-            bounties = [];
           }
         } catch (err) {
           console.error('[bounty] fetch failed', err);
           bounties = [];
         }
-        /* Fallback: ensure at least 12 cards on the board */
         if (bounties.length < 12) {
           const needed = 12 - bounties.length;
-          console.log('[bounty] API returned ' + bounties.length + ' entries, filling with ' + needed + ' placeholders');
-          const extras = FALLBACK_BOUNTIES.slice(0, needed);
-          bounties = bounties.concat(extras);
+          const extras = FALLBACK_BOUNTIES.slice(0, needed).map((fb) => ({ ...fb }));
+          bounties = [...bounties, ...extras];
         }
       }
 
-      /* ── Format relative time ── */
-      function formatTime(isoStr) {
-        if (!isoStr) return '';
-        const d = new Date(isoStr);
-        const now = new Date();
-        const diff = Math.floor((now - d) / 1000);
-        if (diff < 60) return '刚刚';
-        if (diff < 3600) return Math.floor(diff / 60) + ' 分钟前';
-        if (diff < 86400) return Math.floor(diff / 3600) + ' 小时前';
-        if (diff < 604800) return Math.floor(diff / 86400) + ' 天前';
-        return d.toLocaleDateString('zh-CN');
+      /* ── API: Create bounty ── */
+      async function createBounty(description, reward, imageBase64, title) {
+        const res = await fetch('/api/bounty', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ description, reward: Number(reward), imageBase64, title }),
+        });
+        return res.json();
       }
 
-      /* ── Layout: DENSE chaotic cork-board ── */
-      function renderBoard() {
-        const container = document.getElementById('board-container');
-        if (!container) return;
-        container.innerHTML = '';
+      /* ── API: Claim bounty ── */
+      async function claimBounty(bountyId) {
+        const res = await fetch('/api/bounty', {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ id: bountyId, action: 'claim', claimedBy: 'user' }),
+        });
+        return res.json();
+      }
 
-        if (bounties.length === 0) {
-          container.style.minHeight = '120px';
-          container.innerHTML = '<p style="position:absolute;top:20px;left:20px;color:rgba(255,255,255,0.3);font-size:13px;">暂无悬赏 — 成为第一个发布的人 ✦</p>';
-          return;
-        }
+      /* ── Utility: Format time ago ── */
+      function timeAgo(dateStr) {
+        if (!dateStr) return '未知';
+        const now = Date.now();
+        const created = new Date(dateStr).getTime();
+        const diff = now - created;
+        if (diff < 60000) return '刚刚';
+        if (diff < 3600000) return `${Math.floor(diff / 60000)}分钟前`;
+        if (diff < 86400000) return `${Math.floor(diff / 3600000)}小时前`;
+        return `${Math.floor(diff / 86400000)}天前`;
+      }
 
-        const baseCardW = 175;
-        const baseImgH = 110;
-        const gapX = 8;
-        const baseRowH = 205; /* info area ~95px + image 110px */
-        const availW = container.clientWidth - 40;
+      /* ── Utility: Determine rarity from reward ── */
+      function getRarity(reward) {
+        if (reward >= 3000) return 'SSR';
+        if (reward >= 1000) return 'SR';
+        return 'R';
+      }
 
-        /* Force dense layout: 3-4 columns */
-        const maxCols = Math.min(4, Math.max(3, Math.floor(availW / (baseCardW + gapX))));
+      /* ── Utility: Status label ── */
+      function statusLabel(status) {
+        const map = { open: '待认领', claimed: '已认领/托管中', escrowed: '已认领/托管中', delivered: '已交付', completed: '已完成', refunded: '已退回', outbid_refunded: '已退回' };
+        return map[status] || '未知';
+      }
 
-        /* Build irregular row pattern: randomly alternate between maxCols and maxCols-1 */
-        const rowCols = [];
-        let remaining = bounties.length;
-        while (remaining > 0) {
-          const pick = remaining >= maxCols && Math.random() > 0.35 ? maxCols : Math.max(2, Math.min(remaining, maxCols - 1));
-          rowCols.push(Math.min(pick, remaining));
-          remaining -= pick;
-        }
+      /* ── Render cards ── */
+      function renderBountyCards() {
+        const grid = document.getElementById('bounty-grid');
+        if (!grid) return;
 
-        /* Compute top positions with random vertical gaps */
-        const rowTops = [];
-        let curTop = 8;
-        for (let r = 0; r < rowCols.length; r++) {
-          const rowGap = 12 + Math.random() * 22;
-          rowTops.push(curTop);
-          const heightVar = baseRowH + (Math.random() * 40 - 15);
-          curTop += heightVar + rowGap;
-        }
-        container.style.minHeight = String(curTop + 16) + 'px';
+        const filtered = bounties.filter(b => {
+          if (activeFilter === 'all') return true;
+          if (activeFilter === 'available') return b.status === 'open';
+          if (activeFilter === 'escrowed') return b.status === 'claimed' || b.status === 'escrowed' || b.status === 'delivered';
+          if (activeFilter === 'completed') return b.status === 'completed' || b.status === 'refunded' || b.status === 'outbid_refunded' || b.status === 'delivered';
+          return true;
+        });
 
-        /* Place cards */
-        let cardIndex = 0;
-        for (let r = 0; r < rowCols.length; r++) {
-          const colsInRow = rowCols[r];
-          const rowWidth = colsInRow * baseCardW + (colsInRow - 1) * gapX;
-          const rowOffsetX = Math.max(6, (availW - rowWidth) / 2);
+        // Clear old cards
+        grid.innerHTML = '';
 
-          for (let c = 0; c < colsInRow && cardIndex < bounties.length; c++, cardIndex++) {
-            const bounty = bounties[cardIndex];
+        // Grid layout
+        const gridW = grid.offsetWidth || 800;
+        const cardW = 200, cardH = 280;
+        const cols = Math.max(1, Math.floor(gridW / (cardW + 16)));
+        const cellW = gridW / cols;
 
-            const rotate = (Math.random() * 18 - 8).toFixed(2);
-            const offsetY = (Math.random() * 55 - 25).toFixed(0);
-            const offsetX = (Math.random() * 24 - 12).toFixed(0);
-            const lineClamp = Math.random() > 0.5 ? 2 : 3;
-            const overlapPush = (Math.random() > 0.65) ? -(Math.random() * 14 + 6) : 0;
+        filtered.forEach((b, i) => {
+          const col = i % cols;
+          const row = Math.floor(i / cols);
+          const x = col * cellW + 8 + (Math.random() - 0.5) * 20;
+          const y = row * (cardH + 16) + (Math.random() - 0.5) * 12;
+          const rotate = (Math.random() - 0.5) * 6;
 
-            /* Random scale: 0.92, 1.0, or 1.05 */
-            const scaleOptions = [0.92, 0.95, 1.0, 1.0, 1.05];
-            const cardScale = scaleOptions[Math.floor(Math.random() * scaleOptions.length)];
+          const el = document.createElement('div');
+          el.className = 'bounty-card';
+          el.style.cssText = `left:${x}px;top:${y}px;width:${cardW}px;height:${cardH}px;--fly-x:${(Math.random()-0.5)*200}px;--fly-y:${(Math.random()-0.5)*200}px;--fly-r:${rotate}deg;animation-delay:${i * 0.06}s;`;
+          el.dataset.bountyId = b.id;
 
-            const left = rowOffsetX + c * (baseCardW + gapX) + Number(offsetX) + overlapPush;
-            const top = rowTops[r] + Number(offsetY);
+          const rarity = b.rarity || getRarity(b.reward);
+          const status = b.status || 'open';
+          const displayTitle = b.title || (b.description ? b.description.slice(0, 20) : '未命名悬赏');
+          const statusBadge = status !== 'open' ? `<span style="position:absolute;top:8px;right:8px;padding:2px 8px;border-radius:6px;font-size:10px;background:rgba(0,0,0,0.6);color:rgba(0,240,255,0.8);z-index:5;">${statusLabel(status)}</span>` : '';
 
-            const card = document.createElement('div');
-            card.className = 'bounty-card';
-            card.style.left = left + 'px';
-            card.style.top = top + 'px';
-            card.style.setProperty('--card-rotate', rotate + 'deg');
-            card.style.setProperty('--card-scale', cardScale);
-            card.style.setProperty('--fly-y', (20 + Math.random() * 40) + 'px');
-            card.style.transform = `rotate(${rotate}deg) scale(${cardScale})`;
-            card.style.zIndex = Math.floor(Math.random() * 5) + 1;
-            card.style.animation = `cardFlyIn 0.55s ${cardIndex * 0.06}s both ease-out`;
-
-            const desc = (bounty.description || '').substring(0, 80);
-            const reward = bounty.reward ? Number(bounty.reward) : 0;
-            const timeStr = formatTime(bounty.created_at);
-
-            card.innerHTML = `
-              <img src="${bounty.image_url || ''}" alt="bounty" loading="lazy" onerror="this.style.display='none'" />
-              <div class="bounty-card-info">
-                <h3>${desc.substring(0, 28)}${desc.length > 28 ? '...' : ''}</h3>
-                <p style="display:-webkit-box;-webkit-line-clamp:${lineClamp};-webkit-box-orient:vertical;overflow:hidden;">${desc}</p>
-                <span class="bounty-reward">✦ ${reward} 星尘</span>
-                ${timeStr ? '<span class="bounty-time">' + timeStr + '</span>' : ''}
+          el.innerHTML = `
+            <img src="${b.image_url || ''}" alt="${displayTitle}" loading="lazy" />
+            ${statusBadge}
+            <div class="bounty-info">
+              <h3>${displayTitle}</h3>
+              <p class="bounty-lore">${b.description || ''}</p>
+              <div class="bounty-tags">
+                <span class="rarity-tag rarity-${rarity}">${rarity}</span>
               </div>
-            `;
+              <div class="bounty-meta">
+                <span class="reward">${b.reward} ✦</span>
+                <span>${timeAgo(b.created_at)}</span>
+              </div>
+            </div>
+            <div class="bounty-actions">
+              ${status === 'open' ? `<button class="small-btn claim-btn" data-id="${b.id}">✦ 认领</button>` : ''}
+              <button class="ghost-btn detail-btn" data-id="${b.id}">详情</button>
+              ${(status === 'claimed' || status === 'escrowed') ? `<button class="ghost-btn deliver-btn" data-id="${b.id}">交付</button>` : (status === 'delivered' ? '<span style="font-size:11px;color:rgba(0,240,255,0.7);margin-left:4px;">已交付</span>' : '')}
+            </div>
+          `;
+          grid.appendChild(el);
+        });
 
-            container.appendChild(card);
-          }
-        }
-      }
+        // 动态设置容器高度，防止绝对定位卡片被溢出隐藏
+        const rows = Math.ceil(filtered.length / cols);
+        grid.style.minHeight = Math.max(500, rows * (cardH + 16) + 40) + 'px';
 
-      /* ── Image Upload / Drag-and-Drop ── */
-      const dropZone = document.getElementById('drop-zone');
-      const fileInput = document.getElementById('bounty-file');
-      const imagePreview = document.getElementById('image-preview');
-
-      dropZone.addEventListener('click', (e) => {
-        if (e.target !== fileInput) fileInput.click();
-      });
-
-      dropZone.addEventListener('dragover', (e) => {
-        e.preventDefault();
-        dropZone.classList.add('drag-over');
-      });
-
-      dropZone.addEventListener('dragleave', () => {
-        dropZone.classList.remove('drag-over');
-      });
-
-      dropZone.addEventListener('drop', (e) => {
-        e.preventDefault();
-        dropZone.classList.remove('drag-over');
-        const file = e.dataTransfer.files?.[0];
-        if (file && file.type.startsWith('image/')) handleFile(file);
-      });
-
-      fileInput.addEventListener('change', () => {
-        const file = fileInput.files?.[0];
-        if (file) handleFile(file);
-      });
-
-      function handleFile(file) {
-        const reader = new FileReader();
-        reader.onload = () => {
-          uploadedSource = String(reader.result);
-          imagePreview.src = uploadedSource;
-          imagePreview.classList.add('visible');
-          dropZone.querySelector('.drop-zone-text').style.display = 'none';
-          dropZone.querySelector('.drop-zone-icon').style.display = 'none';
-        };
-        reader.readAsDataURL(file);
-      }
-
-      /* ── Form Submit: real API with EconomyManager ── */
-      const formStatus = document.getElementById('form-status');
-      const submitBtn = document.getElementById('submit-btn');
-
-      document.getElementById('bounty-form').addEventListener('submit', async (e) => {
-        e.preventDefault();
-        clearStatus();
-
-        const rewardInput = document.getElementById('bounty-reward').value.trim();
-        const reward = parseInt(rewardInput, 10);
-        if (!rewardInput || isNaN(reward) || reward < 1 || !Number.isInteger(reward)) {
-          showStatus('请输入有效的悬赏金额（正整数）', 'error');
-          return;
-        }
-        if (typeof EconomyManager !== 'undefined' && reward > EconomyManager.getBalance()) {
-          showStatus('星尘余额不足！你只有 ' + EconomyManager.getBalance() + ' ✦', 'error');
-          return;
-        }
-
-        const desc = document.getElementById('bounty-desc').value.trim();
-        if (!desc) {
-          showStatus('请填写悬赏描述', 'error');
-          return;
-        }
-        if (!uploadedSource) {
-          showStatus('请上传悬赏附图', 'error');
-          return;
-        }
-
-        /* Loading state */
-        submitBtn.disabled = true;
-        submitBtn.textContent = '⟡ 发布中...';
-        showStatus('正在上传并记录悬赏令...', 'success');
-
-        try {
-          const res = await fetch('/api/bounty', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              description: desc,
-              reward: reward,
-              imageBase64: uploadedSource,
-            }),
+        // Bind events
+        grid.querySelectorAll('.claim-btn').forEach(btn => {
+          btn.addEventListener('click', async (e) => {
+            e.stopPropagation();
+            const id = btn.dataset.id;
+            await handleClaim(id);
           });
+        });
+        grid.querySelectorAll('.detail-btn').forEach(btn => {
+          btn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            openModal(btn.dataset.id);
+          });
+        });
+        grid.querySelectorAll('.deliver-btn').forEach(btn => {
+          btn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            navigateToDelivery(btn.dataset.id);
+          });
+        });
+      }
 
-          const json = await res.json();
-          if (!res.ok || !json.ok) {
-            throw new Error(json.error || 'Server error');
-          }
-
-          /* Deduct balance */
-          if (typeof EconomyManager !== 'undefined') {
-            EconomyManager.spendStardust(reward);
-          }
-
-          /* Success */
-          showStatus('✦ 悬赏令已发布！扣除 ' + reward + ' ✦', 'success');
-          document.getElementById('bounty-desc').value = '';
-          document.getElementById('bounty-reward').value = '';
-          uploadedSource = '';
-          imagePreview.classList.remove('visible');
-          dropZone.querySelector('.drop-zone-text').style.display = '';
-          dropZone.querySelector('.drop-zone-icon').style.display = '';
-          fileInput.value = '';
-
-          /* Re-fetch and re-render board */
-          await fetchBounties();
-          renderBoard();
-        } catch (err) {
-          console.error('[bounty] submit failed', err);
-          showStatus('发布失败: ' + err.message, 'error');
-        } finally {
-          submitBtn.disabled = false;
-          submitBtn.textContent = '✦ 发布悬赏令';
+      // 翻译后端错误提示，提升用户体验
+      function translateError(msg) {
+        if (!msg) return '未知错误';
+        if (msg.includes('not available')) {
+          return '该悬赏已被其他流浪者抢先认领，请寻找下一个目标吧！';
         }
-      });
-
-      function showStatus(msg, type) {
-        formStatus.textContent = msg;
-        formStatus.className = 'form-status is-visible ' + type;
+        if (msg.includes('must be claimed first') || msg.includes('status: delivered')) {
+          return '该悬赏已交付，无需重复操作。';
+        }
+        if (msg.includes('cannot be completed')) {
+          return '当前状态无法完成归档。';
+        }
+        if (msg.includes('refunded')) {
+          return '只有已认领的悬赏才能退回托管。';
+        }
+        return msg;
       }
 
-      function clearStatus() {
-        formStatus.className = 'form-status';
-        formStatus.textContent = '';
+      /* ── Handle claim ── */
+      async function handleClaim(bountyId) {
+        const bounty = bounties.find(b => b.id === bountyId);
+        if (!bounty) return;
+        const reward = Number(bounty.reward);
+        const bal = (window.EconomyManager?.getBalance?.() ?? Number(localStorage.getItem("stardust_balance") || 0)) || 0;
+        if (bal < reward) {
+          showFormStatus('error', `余额不足！需要 ${reward} ✦，当前 ${bal} ✦`);
+          return;
+        }
+        // Deduct
+        if (window.EconomyManager) {
+          const ok = window.EconomyManager.spendStardust(reward);
+          if (!ok) {
+            showFormStatus('error', `扣款失败，余额不足`);
+            return;
+          }
+        }
+        // Update sidebar
+        updateSidebar(bounty);
+        // Write nexus state for delivery page
+        writeNexusState(bounty, reward, 'escrowed');
+        // Call API
+        try {
+          const res = await claimBounty(bountyId);
+          if (res.ok) {
+            showFormStatus('success', `已认领！赏金 ${reward} ✦ 已托管`);
+            bounty.status = 'escrowed';
+            renderBountyCards();
+            // Navigate to delivery
+            setTimeout(() => navigateToDelivery(bountyId), 800);
+          } else {
+            showFormStatus('error', translateError(res.error) || '认领失败');
+            if (window.EconomyManager) {
+              window.EconomyManager.addStardust(reward);
+            }
+            // Remove nexus state on failure
+            try {
+              const state = JSON.parse(localStorage.getItem(NEXUS_STATE_KEY) || '{}');
+              if (state.currentUserBid?.itemId === bounty.id) {
+                delete state.bids[bounty.id];
+                state.currentUserBid = null;
+                localStorage.setItem(NEXUS_STATE_KEY, JSON.stringify(state));
+                localStorage.removeItem('bounty_nexus_active');
+              }
+            } catch (_) {}
+          }
+        } catch (err) {
+          showFormStatus('error', '网络异常，请稍后重试');
+          if (window.EconomyManager) {
+            window.EconomyManager.addStardust(reward);
+          }
+        }
       }
 
-      /* ── Balance display ── */
-      function updateBalanceDisplay() {
-        const el = document.getElementById('balance-val');
-        if (el && typeof EconomyManager !== 'undefined') {
-          el.textContent = EconomyManager.getBalance();
+      /* ── Navigate to delivery ── */
+      function navigateToDelivery(bountyId) {
+        if (window.PortalRouter && window.PortalRouter.navigate) {
+          window.PortalRouter.navigate('delivery', { itemId: bountyId });
+        } else {
+          window.location.href = `./bounty-delivery.html?itemId=${bountyId}`;
+        }
+      }
+
+      /* ── Modal ── */
+      function openModal(bountyId) {
+        selectedBounty = bounties.find(b => b.id === bountyId);
+        if (!selectedBounty) return;
+        const modal = document.getElementById('bounty-modal');
+        const img = document.getElementById('modal-image');
+        const title = document.getElementById('modal-title');
+        const lore = document.getElementById('modal-lore');
+        const rarity = document.getElementById('modal-rarity');
+        const deadline = document.getElementById('modal-deadline');
+        const status = document.getElementById('modal-status');
+        const reward = document.getElementById('modal-reward');
+        const highest = document.getElementById('modal-highest');
+        const userbid = document.getElementById('modal-userbid');
+        const bidInput = document.getElementById('bid-input');
+
+        img.src = selectedBounty.image_url || '';
+        title.textContent = selectedBounty.title || (selectedBounty.description ? selectedBounty.description.slice(0, 20) : '未命名悬赏');
+        lore.textContent = selectedBounty.description || '';
+        rarity.textContent = getRarity(selectedBounty.reward);
+        deadline.textContent = '72 小时';
+        status.textContent = statusLabel(selectedBounty.status || 'open');
+        reward.textContent = `${selectedBounty.reward} ✦`;
+        highest.textContent = `${selectedBounty.reward} ✦`;
+        userbid.textContent = '未出价';
+        bidInput.value = selectedBounty.reward;
+
+        modal.classList.add('is-open');
+        modal.setAttribute('aria-hidden', 'false');
+      }
+
+      function closeModal() {
+        const modal = document.getElementById('bounty-modal');
+        modal.classList.remove('is-open');
+        modal.setAttribute('aria-hidden', 'true');
+        selectedBounty = null;
+      }
+
+      function showBidNotice(type, msg) {
+        const el = document.getElementById('bid-notice');
+        el.className = `notice is-visible ${type}`;
+        el.textContent = msg;
+        setTimeout(() => { el.className = 'notice'; }, 4000);
+      }
+
+      /* ── Bid helpers ── */
+      function setupBidButtons() {
+        const input = document.getElementById('bid-input');
+        const p10 = document.getElementById('bid-p10');
+        const p25 = document.getElementById('bid-p25');
+        const p50 = document.getElementById('bid-p50');
+        const allBtn = document.getElementById('bid-all');
+        if (p10) p10.addEventListener('click', () => { const base = selectedBounty ? Number(selectedBounty.reward) : 0; input.value = Math.ceil((input.value || base) * 1.1); });
+        if (p25) p25.addEventListener('click', () => { const base = selectedBounty ? Number(selectedBounty.reward) : 0; input.value = Math.ceil((input.value || base) * 1.25); });
+        if (p50) p50.addEventListener('click', () => { const base = selectedBounty ? Number(selectedBounty.reward) : 0; input.value = Math.ceil((input.value || base) * 1.5); });
+        if (allBtn) allBtn.addEventListener('click', () => { const bal = (window.EconomyManager?.getBalance?.() ?? Number(localStorage.getItem("stardust_balance") || 0)) || 0; input.value = bal; });
+      }
+
+      /* ── Sync balance ── */
+      function syncBalance() {
+        const bal = (window.EconomyManager?.getBalance?.() ?? Number(localStorage.getItem("stardust_balance") || 0)) || 0;
+        const val = document.getElementById('balance-val');
+        const valSide = document.getElementById('balance-val-sidebar');
+        if (val) val.textContent = bal;
+        if (valSide) valSide.textContent = bal;
+      }
+
+      /* ── Update sidebar ── */
+      function updateSidebar(bounty) {
+        const risk = document.getElementById('risk-val');
+        const contract = document.getElementById('contract-val');
+        if (risk) risk.textContent = '悬赏活跃，资金流动加速';
+        if (contract && bounty) {
+          const title = bounty.title || (bounty.description ? bounty.description.slice(0, 18) : '悬赏');
+          contract.textContent = `${title} | 赏金 ${bounty.reward} ✦ 托管中`;
+        }
+      }
+
+      /* ── Form status ── */
+      function showFormStatus(type, msg) {
+        const el = document.getElementById('form-status');
+        if (!el) return;
+        el.className = `form-status is-visible ${type}`;
+        el.textContent = msg;
+        setTimeout(() => { el.className = 'form-status'; }, 5000);
+      }
+
+      /* ── Image upload ── */
+      function setupImageUpload() {
+        const dropZone = document.getElementById('drop-zone');
+        const fileInput = document.getElementById('bounty-file');
+        const preview = document.getElementById('image-preview');
+        const previewImg = document.getElementById('preview-img');
+
+        function handleFile(file) {
+          if (!file || !file.type.startsWith('image/')) return;
+          const reader = new FileReader();
+          reader.onload = (e) => {
+            uploadedSource = e.target.result;
+            previewImg.src = uploadedSource;
+            preview.classList.add('is-visible');
+          };
+          reader.readAsDataURL(file);
+        }
+
+        if (fileInput) {
+          fileInput.addEventListener('change', (e) => {
+            if (e.target.files && e.target.files[0]) handleFile(e.target.files[0]);
+          });
+        }
+        if (dropZone) {
+          dropZone.addEventListener('click', () => { if (fileInput) fileInput.click(); });
+          ['dragenter', 'dragover'].forEach(evt => {
+            dropZone.addEventListener(evt, (e) => { e.preventDefault(); dropZone.classList.add('is-dragover'); });
+          });
+          ['dragleave', 'drop'].forEach(evt => {
+            dropZone.addEventListener(evt, (e) => { e.preventDefault(); dropZone.classList.remove('is-dragover'); });
+          });
+          dropZone.addEventListener('drop', (e) => {
+            if (e.dataTransfer && e.dataTransfer.files[0]) handleFile(e.dataTransfer.files[0]);
+          });
+        }
+      }
+
+      /* ── Submit form ── */
+      function setupSubmitForm() {
+        const btn = document.getElementById('submit-btn');
+        if (!btn) return;
+        btn.addEventListener('click', async () => {
+          const reward = document.getElementById('bounty-reward').value;
+          const desc = document.getElementById('bounty-desc').value.trim();
+          const imageBase64 = uploadedSource;
+
+          if (!desc) { showFormStatus('error', '请填写悬赏描述'); return; }
+          if (!reward || Number(reward) <= 0) { showFormStatus('error', '请填写有效悬赏金额'); return; }
+          if (!imageBase64) { showFormStatus('error', '请上传悬赏附图'); return; }
+
+          const bal = (window.EconomyManager?.getBalance?.() ?? Number(localStorage.getItem("stardust_balance") || 0)) || 0;
+          if (bal < Number(reward)) {
+            showFormStatus('error', `余额不足！需要 ${reward} ✦，当前 ${bal} ✦`);
+            btn.classList.add('shake');
+            setTimeout(() => btn.classList.remove('shake'), 600);
+            return;
+          }
+
+          btn.disabled = true;
+          btn.textContent = '✦ 正在发榜…';
+          showFormStatus('', '提交中…');
+
+          try {
+            const res = await createBounty(desc, reward, imageBase64, desc.slice(0, 20));
+            if (res.ok) {
+              if (window.EconomyManager) {
+                window.EconomyManager.spendStardust(Number(reward));
+              }
+              showFormStatus('success', `悬赏已发布！赏金 ${reward} ✦ 已扣除`);
+              document.getElementById('bounty-reward').value = '';
+              document.getElementById('bounty-desc').value = '';
+              uploadedSource = '';
+              document.getElementById('image-preview').classList.remove('is-visible');
+              await fetchBounties();
+              renderBountyCards();
+              syncBalance();
+            } else {
+              showFormStatus('error', translateError(res.error) || '发布失败');
+            }
+          } catch (err) {
+            showFormStatus('error', '网络异常，请稍后重试');
+          }
+          btn.disabled = false;
+          btn.textContent = '✦ 发布悬赏令';
+        });
+      }
+
+      /* ── Filter buttons ── */
+      function setupFilters() {
+        document.querySelectorAll('.filter-btn').forEach(btn => {
+          btn.addEventListener('click', () => {
+            document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('is-active'));
+            btn.classList.add('is-active');
+            activeFilter = btn.dataset.filter;
+            renderBountyCards();
+          });
+        });
+      }
+
+      /* ── Navigate to delivery button ── */
+      function setupDeliveryBtn() {
+        const btn = document.getElementById('to-delivery-btn');
+        if (btn) {
+          btn.addEventListener('click', () => {
+            // Navigate to delivery with the current user's active bid if any
+            const activeId = JSON.parse(localStorage.getItem('bounty_nexus_active') || '{}')?.itemId || '';
+            navigateToDelivery(activeId);
+          });
         }
       }
 
       /* ── Init ── */
-      window.addEventListener('DOMContentLoaded', async () => {
-        updateBalanceDisplay();
-        if (typeof EconomyManager !== 'undefined') {
-          EconomyManager.onChange(updateBalanceDisplay);
+      async function init() {
+        syncBalance();
+        if (window.EconomyManager) {
+          window.EconomyManager.onChange(syncBalance);
         }
-        await fetchBounties();
-        renderBoard();
-      });
+        setupFilters();
+        setupImageUpload();
+        setupSubmitForm();
+        setupBidButtons();
+        setupDeliveryBtn();
 
-      window.addEventListener('resize', () => {
-        renderBoard();
-      });
+        // Modal close
+        document.getElementById('bounty-modal').addEventListener('click', (e) => {
+          if (e.target.id === 'bounty-modal') closeModal();
+        });
+        document.getElementById('modal-close').addEventListener('click', closeModal);
+
+        // Bid submit
+        document.getElementById('bid-submit').addEventListener('click', async () => {
+          if (!selectedBounty) return;
+          const bid = Number(document.getElementById('bid-input').value);
+          if (bid <= 0) { showBidNotice('error', '请输入有效出价'); return; }
+          const bal = (window.EconomyManager?.getBalance?.() ?? Number(localStorage.getItem("stardust_balance") || 0)) || 0;
+          if (bal < bid) { showBidNotice('error', `余额不足！需要 ${bid} ✦，当前 ${bal} ✦`); return; }
+
+          if (window.EconomyManager) {
+            const ok = window.EconomyManager.spendStardust(bid);
+            if (!ok) { showBidNotice('error', `扣款失败`); return; }
+          }
+          const res = await claimBounty(selectedBounty.id);
+          if (res.ok) {
+            selectedBounty.status = 'escrowed';
+            writeNexusState(selectedBounty, bid, 'escrowed');
+            showBidNotice('success', `出价 ${bid} ✦ 托管成功！`);
+            syncBalance();
+            renderBountyCards();
+            setTimeout(() => { closeModal(); navigateToDelivery(selectedBounty.id); }, 1000);
+          } else {
+            if (window.EconomyManager) window.EconomyManager.addStardust(bid);
+            showBidNotice('error', translateError(res.error) || '托管失败');
+          }
+        });
+
+        await fetchBounties();
+        renderBountyCards();
+      }
+
+      init();
     </script>
   </body>
 </html>

@@ -4,367 +4,365 @@
 
 ---
 
-## 1. 真实架构拓扑梳理
+## 1. 项目总览
 
-当前代码库已经从单一的剧情交互引擎，演化成两条物理隔离的产品轨道：
+当前代码库已经从早期的单一剧情页，演化成一个**星际叙事门户系统**。它的核心不是“一个网页”，而是一组围绕同一世界观协同工作的模块：
 
-1. **剧情轨**：`index.html` / `app.js` / `Navigator.js` / `Renderer.js` / `story.json`
-2. **全栈 3D 轨**：`memorial-wall.html`（入口） + `wall-test.html`（沉浸页） / `js/MemorialWall.js` / 后端 `/api/wall` / 数据库与对象存储
+1. **主剧情轨**：`index.html` / `story.html` / `story.json` / `js/app.js` / `js/Navigator.js` / `js/Renderer.js` / `js/Interaction.js`
+2. **身份卡与商品轨**：`memorial-wall.html` / `wall-test.html` / `js/MemorialWall.js`
+3. **悬赏轨**：`bounty-board.html` / `bounty-delivery.html`
+4. **品牌与实验页**：`truth-branding.html`
+5. **公共系统层**：`EconomyManager.js` / `CommodityService.js` / `FxEngine.js` / `PortalRouter.js` / `global-reset.js`
 
-### 1.1 剧情轨的数据流
+这几个模块在叙事上是同一个宇宙，在技术上则是**多页面、模块化、状态局部共享**的架构。
+
+---
+
+## 2. 当前产品结构的真实形态
+
+### 2.1 主入口与模块入口
+
+`index.html` 是总入口，但它不再只是“剧情页壳子”，而是一个**模块入口选择器**：
+
+- 首次进入默认应走主剧情
+- 后续进入可以切换到其他模块页面
+- 入口层通过 `iframe` 承载子页面
+- `PortalRouter.js` 提供统一的页面跳转抽象
+
+入口页的职责是：
+
+- 播放全局 BGM
+- 让用户选择进入哪个系统模块
+- 保持项目整体的星空、仪式感和门户感
+
+### 2.2 主剧情轨
+
+剧情轨是整个项目的“解锁层”和“赚钱层”的前提：
+
+- `story.json` 定义剧情节点、交互、奖励、分支
+- `Navigator.js` 负责节点推进、flags、历史栈、条件判断
+- `Renderer.js` 只负责把节点渲染到 DOM
+- `Interaction.js` 负责 hold / mash / drag / connect 等交互
+- `app.js` 是胶水层和事件编排层
+
+剧情轨的真实作用不是单纯讲故事，而是：
+
+- 引导用户获得星辰
+- 建立“进入系统”的仪式感
+- 让后续模块页有解锁逻辑
+
+### 2.3 身份卡与商品轨
+
+`memorial-wall.html` 与 `wall-test.html` 是项目里第二条非常重要的轨道。
+
+- `memorial-wall.html`：入口与提交页，负责昵称、头像、摄像头、上传、余额展示、商品架入口
+- `wall-test.html`：沉浸式展示页，负责 34 张身份卡 / 照片墙展示
+
+这条轨道的核心是“商品身份化”：
+
+- 用户输入昵称
+- 提交头像 / 摄像头 / 上传图像
+- 形成身份卡或商品卡
+- 再进入沉浸式展示页
+
+### 2.4 悬赏轨
+
+`bounty-board.html` 与 `bounty-delivery.html` 是新增的另一条系统轨。
+
+- `bounty-board.html`：发榜 + 接契 + 托管 + 超越退款 + 悬赏卡展示
+- `bounty-delivery.html`：交付 + 清算 + 归档 + 退回托管
+
+这条轨不是剧情分支，而是**系统层功能轨**，和商品轨并列，独立于主线存在，但又依赖主线解锁。
+
+### 2.5 品牌与实验页
+
+`truth-branding.html` 及其他历史页面属于扩展模块或实验模块，通常没有与主线完全统一的导航体系，因此后续需要逐步纳入统一模块导航规范。
+
+---
+
+## 3. 真实架构拓扑
+
+### 3.1 剧情轨数据流
 
 ```text
 index.html
-  └─ 只负责页面壳、资源引入、首屏挂载
+  └─ 页面壳 + 启动选择器 + iframe 承载
         ↓
 js/app.js
   ├─ 初始化 DeviceManager / FxEngine / StoryRenderer / Navigator / Debugger
-  ├─ 绑定隐藏彩蛋、摄像头弹窗、调试按钮
-  └─ 不直接拥有剧情真相源
+  ├─ 绑定彩蛋、摄像头、调试与过渡行为
+  └─ 负责节点切换时的系统级行为编排
         ↓
 js/Navigator.js
-  ├─ 负责剧情跳转、历史栈、flags、条件判断、回退
-  ├─ 接收 Renderer / Interaction 的回调
-  └─ 是剧情状态中枢
+  ├─ 剧情路由中枢
+  ├─ 管理历史栈、flags、节点推进、条件判断
+  └─ 调用 Renderer / Interaction 的回调
         ↓
 js/Renderer.js
   ├─ 读取 story.json
-  ├─ 渲染标题、正文、背景、选项按钮、布局 class
-  └─ 只负责把状态表现到 DOM
+  ├─ 渲染标题、正文、背景、选项、布局
+  └─ 只负责表现，不负责决策
         ↓
 story.json
   └─ 剧情 SSOT（single source of truth）
 ```
 
-### 1.2 全栈 3D 轨的数据流
+### 3.2 身份卡轨数据流
 
 ```text
 memorial-wall.html
-  ├─ 入口页：昵称 / 摄像头 / 上传 / 头像生成 / 提交
-  └─ 提交成功后跳转 wall-test.html
+  ├─ 昵称 / 上传 / 摄像头 / 余额 / 商品架入口
+  ├─ 扣星辰、提交、状态锁
+  └─ 根据 user_submitted 决定是否自动进入沉浸页
         ↓
 wall-test.html
-  └─ 只负责挂载沉浸式 3D 照片墙
+  ├─ 沉浸式 3D 照片墙承载页
+  └─ 初始化 js/MemorialWall.js
         ↓
 js/MemorialWall.js
-  ├─ 本地 3D 入口层 + 星海引擎
-  ├─ 负责 Canvas 头像演化、上传 / 摄像头兜底、状态锁
-  ├─ 负责把最终数据 POST 到 `/api/wall`
-  └─ 负责在提交后坍塌并进入沉浸模式
-        ↓
-/api/wall
-  ├─ 接收提交数据
-  ├─ 进行字段校验
-  └─ 写入数据库 / OSS / 头像资源
+  ├─ 头像演化、粒子、上传 / 摄像头兜底
+  ├─ 状态锁与提交后坍塌
+  └─ POST /api/wall
 ```
 
-### 1.3 物理隔离机制
+### 3.3 悬赏轨数据流
 
-这两条轨道的隔离是“真实物理隔离”，不是同页伪隔离：
-
-- **DOM 隔离**
-  - 剧情轨在 `index.html` 的主 `#app` 中运行。
-  - 3D 轨在 `memorial-wall.html` / `wall-test.html` 的独立根节点中运行。
-  - 两者不共享同一个 UI 树。
-
-- **渲染循环隔离**
-  - 剧情轨主要依赖 DOM / CSS 动画 / 轻量特效。
-  - 3D 轨依赖独立的 `requestAnimationFrame` 循环与 WebGL Canvas。
-  - `MemorialWall.js` 的 rAF 循环不应反向驱动剧情页。
-
-- **状态隔离**
-  - 剧情轨状态由 `Navigator.flags`、`story.json`、页面 DOM 状态组成。
-  - 3D 轨状态由 `localStorage.user_submitted`、本页输入态和后端提交结果组成。
-  - 二者不能共用同一份“页面内全局状态对象”来偷懒耦合。
+```text
+bounty-board.html
+  ├─ 悬赏列表、发榜表单、领取托管、测试兜底数据
+  ├─ /api/bounty 提交
+  ├─ EconomyManager 扣星辰
+  └─ localStorage 记录托管状态
+        ↓
+bounty-delivery.html
+  ├─ 读取当前契约
+  ├─ 交付 / 退回托管 / 归档
+  └─ EconomyManager 返还星辰或完成结算
+```
 
 ---
 
-## 2. 核心模块与文件真实职责
+## 4. 模块职责拆解
 
-下面按当前代码库里**真实存在**的文件来说明职责。
+### 4.1 `index.html`
 
-### 2.1 剧情轨
+- 统一入口壳
+- 播放全局 BGM
+- 展示模块选择/启动页
+- 通过 `iframe` 承载子页面
+- 需要确保首次进入强制主剧情，后续进入允许模块切换
 
-#### `index.html`
-- 剧情轨入口页。
-- 负责挂载主应用壳体、故事卡片区域、摄像头弹窗、彩蛋区。
-- 负责加载 `js/app.js`、`js/Renderer.js`、`js/Navigator.js` 等模块。
+### 4.2 `js/PortalRouter.js`
 
-#### `js/app.js`
-- 剧情轨胶水层与启动器。
-- 初始化 `DeviceManager`、`FxEngine`、`StoryRenderer`、`Navigator`、`Debugger`。
-- 绑定隐藏彩蛋触发、调试按钮、摄像头弹窗入口。
-- **不应**直接写剧情分支判断。
+- 项目级路由抽象层
+- 负责将“模块名”映射为真实 HTML 页面
+- 负责向 iframe 注入目标页面 URL
+- 未来应成为所有模块切换的统一入口
 
-#### `js/Navigator.js`
-- 剧情路由中枢。
-- 负责节点切换、历史栈、flags 写入、条件判断、节点完成后的推进。
-- 是剧情轨的状态中心。
+### 4.3 `js/app.js`
 
-#### `js/Renderer.js`
-- 剧情渲染器。
-- 读取 `story.json` 并将节点内容映射到 DOM。
-- 管理布局 class、背景、标题、正文、选项按钮、交互提示。
-- **只渲染，不决策**。
+- 剧情轨胶水层
+- 负责初始化各服务
+- 负责特殊按钮分支、黑场、彩蛋、系统切换
+- **不应**写死剧情内容
 
-#### `js/Interaction.js`
-- 物理交互层。
-- 处理 mash / hold / drag 等输入动作。
-- 交互成功后回调 `Navigator`。
+### 4.4 `js/Navigator.js`
 
-#### `js/FxEngine.js`
-- 视觉涂层引擎。
-- 管理粒子、拖尾、点击爆发、主题切换。
-- 不参与剧情逻辑，不读取 flags。
+- 剧情节点路由中枢
+- 负责 flags、条件、历史、回退
+- 是主剧情的状态控制器
 
-#### `js/DeviceManager.js`
-- 设备 / 端模式管理。
-- 负责 `desktop-mode` / `mobile-mode` 的自动识别与切换。
+### 4.5 `js/Renderer.js`
 
-#### `js/CameraEgg.js`
-- 剧情轨里的摄像头彩蛋模块。
-- 负责摄像头采集、身份卡合成、下载导出。
-- 与 3D 照片墙入口页不是同一个功能层。
+- 剧情显示器
+- 只做渲染，不做决策
 
-#### `js/MediaManager.js`
-- 音频解锁与 BGM 播放控制。
+### 4.6 `js/Interaction.js`
 
-#### `js/utils.js`
-- 纯工具函数。
-- 只放无副作用 helper。
+- 负责 hold / mash / drag / connect
+- 不直接切剧情，只发出结果事件
 
-#### `story.json`
-- 剧情轨唯一真相源（SSOT）。
-- 剧情节点、分支、交互要求、状态写入都应在此表达。
+### 4.7 `js/FxEngine.js`
 
-### 2.2 全栈 3D 轨
+- 视觉粒子与过渡特效层
+- 管理星尘、闪光、拖尾、背景光效
 
-#### `memorial-wall.html`
-- 3D 轨入口页。
-- 负责 AI 头像演化、摄像头采集、本地图片上传、昵称兜底、提交按钮。
-- 根据 `localStorage.user_submitted` 决定是否自动跳转到 `wall-test.html`。
-- 当前是前端交互层，不是沉浸页。
+### 4.8 `js/EconomyManager.js`
 
-#### `wall-test.html`
-- 3D 轨沉浸页。
-- 当前是 `MemorialWall` 的独立承载页。
-- 负责初始化 `js/MemorialWall.js`。
+- 星辰余额系统
+- 所有页面都应通过它读取 / 扣除 / 返还星辰
+- 是经济闭环的统一服务层
 
-#### `js/MemorialWall.js`
-- 3D 照片墙的核心前端引擎。
-- 负责：
-  - 上层 Portal UI 结构
-  - 圆形 Canvas 头像演化
-  - 昵称 Hash 驱动粒子密度 / 颜色
-  - 图片上传后的 `Pixel Dissolve`
-  - 摄像头采集结果作为头像来源
-  - 兜底的昵称头像生成
-  - `localStorage.user_submitted` 状态锁
-  - 提交后 UI 坍塌并进入全屏 3D 星海
-  - POST 数据到 `/api/wall`
-- 同时也承担一个轻量的 WebGL 场景初始化。
+### 4.9 `js/CommodityService.js`
 
-#### `/api/wall`
-- 3D 轨的后端提交接口。
-- 负责接收头像卡与昵称信息。
-- 当前前端提交协议已统一为 `imageBase64` 作为主图字段，并保留昵称文本信息。
+- 商品 / 身份卡 / 购买状态管理
+- 与 `memorial-wall.html` 强关联
 
-#### 数据库 / OSS
-- 负责保存头像卡片、昵称、来源字段、图像资源。
-- 属于后端持久化层，不应由前端臆造其结构。
+### 4.10 `js/MemorialWall.js`
+
+- 3D 照片墙核心前端引擎
+- 头像生成、上传、摄像头、沉浸展示
 
 ---
 
-## 3. 数据流与状态锁红线
+## 5. 当前状态体系
 
-### 3.1 剧情轨的数据规范
+### 5.1 剧情轨状态
 
-#### `story.json` 是唯一真相源
-- 节点标题、正文、分支、交互、特效主题都应从 `story.json` 读取。
-- `Navigator.js` 只能解释数据，不应把剧情写死在代码里。
-- `Renderer.js` 只能呈现。
+剧情轨依赖这些状态来源：
 
-#### 状态写入
-- `Navigator.flags` 用于剧情推进的临时状态。
-- `setFlags` 由数据驱动写入。
-- 不允许把剧情状态隐式塞进全局 DOM 属性当作主要状态源。
+- `story.json` 节点数据
+- `Navigator.flags`
+- `localStorage` 中的少量持久化状态
+- 页面 DOM 当前状态
 
-### 3.2 3D 轨的数据规范
+### 5.2 身份卡轨状态
 
-#### 提交协议
-当前 3D 轨入口页的提交，必须围绕最终输出字段组织：
+身份卡轨主要依赖：
 
-- `imageBase64`：统一头像主字段
-- `name` / `nickname`：昵称文本字段
-- `avatarMode`：头像来源标识，建议值为 `camera | upload | nickname`
-- `avatar`：兼容字段，若后端仍在使用旧字段可保留 [TODO/Debt]
+- `localStorage.user_submitted`
+- `localStorage.stardust_balance`
+- 当前昵称 / 上传 / 摄像头来源
+- `EconomyManager` 的余额
 
-#### 头像优先级
-1. 摄像头照片
-2. 本地上传图片
-3. 昵称生成的 Canvas 头像兜底
+### 5.3 悬赏轨状态
 
-#### 状态锁
-- `localStorage.getItem('user_submitted')` 是 3D 轨前端状态锁。
-- 一旦提交成功，入口页应锁定并跳转沉浸页。
-- 已提交用户再次进入时应自动跳过入口页。
+悬赏轨的状态至少包含：
 
-### 3.3 [TODO/Debt] 提交协议清理
-当前前端和后端的字段命名仍可能存在历史包袱：
-- 某些旧逻辑可能还在使用 `avatar`
-- 某些后端校验可能只认 `imageBase64`
+```js
+{
+  itemId,
+  amount,
+  status,
+  escrowAt,
+  refundedAt,
+  completedAt,
+  signature
+}
+```
 
-建议后续把 `/api/wall` 的契约固化成文档并清理兼容分支，避免多字段并行导致歧义。
+并通过 `localStorage` 在 `bounty-board.html` 与 `bounty-delivery.html` 之间共享。
 
 ---
 
-## 4. 视觉红线
+## 6. 视觉与交互风格规范
 
-这一章是给 Hermes 和视觉 Agent 的硬约束。
+### 6.1 项目整体视觉基调
 
-### 4.1 动画准则
+当前项目已经形成一套稳定的“星空玻璃拟态”语言：
 
-- **禁止**使用生硬的 `linear` 匀速过渡作为主运动语言。
-- 主运动应该使用：
-  - `lerp` / 插值曲线
-  - 非线性 easing
-  - CSS cubic-bezier
-- 允许少量线性运动用于机械细节，但不能作为主视觉风格。
+- 深色背景
+- 青蓝 / 紫色冷光
+- 玻璃拟态卡片
+- 轻微粒子 / 星尘 / 背景漂移
+- 发光边缘和冷白文字
 
-### 4.2 3D 质感要求
+### 6.2 按钮风格
 
-3D 轨必须维持以下审美基线：
-- 辉光 / Bloom 后处理
-- PBR 材质，例如 `MeshStandardMaterial`
-- 动态星尘 / 星云 / 粒子背景
-- 不能用僵硬静态贴图替代动态体积感
+按钮风格正在逐步统一，推荐分为：
 
-### 4.3 色彩管理
+- `btn-primary`：关键动作，如提交、确认、进入、托管
+- `btn-secondary`：辅助动作，如返回、关闭、筛选、切换 tab
+- `btn-danger`：危险动作，如退回、重置、清除
 
-当前主色体系是“莫兰迪赛博配色”：
-- 背景：`#0B0F19`
-- 主高亮：`#00F0FF`
-- 辅助紫：`#6B4BFF`
-- 冷白高光：`rgba(255,255,255,0.72~0.92)`
+### 6.3 Tab 风格
 
-其他颜色必须围绕这套冷暗底色进行组织，不能出现突兀的高饱和大面积纯色污染。
+Tab 目前在多页面中逐渐成为产品关键导航，因此需要统一：
 
-### 4.4 文本可读性
-
-- 3D / 玻璃拟态 / 背景动效下，文本必须加 `text-shadow` 或等效边缘光。
-- 不能因为追求酷炫而让正文发虚、糊成一片。
-
-### 4.5 全栈 3D 轨的材质与运动红线
-
-- 优先动态生成内容，不要用死贴图凑场面。
-- 头像演化区必须保留“生成感”而不是直接把图片塞到页面中间。
-- 提交前的引力坍塌必须有明确的中心收束视觉，而不是简单淡出。
+- 深色玻璃拟态
+- 当前激活项高亮
+- 锁定态 / 解锁态
+- 模块切换与页内切换区分清晰
 
 ---
 
-## 5. `wall-test.html` / `MemorialWall.js` 的真实运行方式
+## 7. 真实存在的风险与技术债
 
-### 5.1 入口页职责
-`memorial-wall.html` 负责：
-- 昵称输入
-- 摄像头拍照
-- 本地图片上传
-- AI 头像预览
-- 提交请求
-- 锁定后跳转到 `wall-test.html`
+### 7.1 入口逻辑逐渐复杂
 
-### 5.2 沉浸页职责
-`wall-test.html` 负责：
-- 只做沉浸页挂载
-- 不再承载表单交互
-- 不再与摄像头 / 上传 / 提交逻辑混杂
+随着新页面增多，入口层有可能出现：
 
-### 5.3 `MemorialWall.js` 的职责边界
-`js/MemorialWall.js` 当前承担了较多职责，既包含 Portal UI，又包含 3D 场景初始化和滚动卡片逻辑。
-
-这意味着它是一个“入口 + 场景”混合模块。这个结构可工作，但不够理想。
+- 首次进入与后续进入逻辑不一致
+- 某些页面可以直接打开，绕过主线
+- 模块切换分散在各自页面，缺乏统一路由
 
 #### [TODO/Debt]
-后续可以考虑将其拆成：
-- `MemorialWallPortal.js`：只负责入口层
-- `StarEchoEngine.js`：只负责 3D 场景
+后续应进一步固化“首次必须走主剧情，后续才开放模块 tab”的统一入口策略。
 
-目前先按现状维护，不强行拆，避免引入不必要风险。
+### 7.2 页面 tab 与按钮风格不完全一致
 
----
+项目快速迭代导致：
 
-## 6. 与后端 / 存储层的通信规范
+- 页面自身写了一套 tab
+- 下一页又写另一套 tab
+- 按钮圆角、阴影、色值、hover 不一致
 
-### 6.1 前端到 `/api/wall`
-入口页提交时，至少应包含：
-- `imageBase64`
-- `name` / `nickname`
-- `avatarMode`
+#### [TODO/Debt]
+后续应抽出统一的设计变量和按钮系统，避免风格漂移。
 
-建议保留：
-- `avatar` 兼容旧字段 [TODO/Debt]
+### 7.3 状态持久化分散
 
-### 6.2 `imageBase64` 的生成规则
-- 摄像头照片：从拍照结果转成 Base64
-- 上传图片：从本地文件转成 Base64
-- 昵称兜底：从 Canvas 导出 Base64
+目前状态散落在：
 
-### 6.3 昵称文本信息
-昵称必须作为独立文本字段一并保存到后端数据库，不能只存在前端预览里。
+- `localStorage`
+- 当前页面全局变量
+- 少量服务层
 
----
+#### [TODO/Debt]
+后续应整理统一的模块状态约定，避免多个页面对同一状态的解释不一致。
 
-## 7. 关键文件索引
+### 7.4 API 契约历史包袱
 
-### 剧情轨
-- `index.html`
-- `js/app.js`
-- `js/Navigator.js`
-- `js/Renderer.js`
-- `js/Interaction.js`
-- `js/FxEngine.js`
-- `js/DeviceManager.js`
-- `js/MediaManager.js`
-- `js/CameraEgg.js`
-- `js/utils.js`
-- `story.json`
+部分页面存在“前端字段已经换了，但后端/旧逻辑仍有兼容”的风险，例如：
 
-### 3D 轨
-- `memorial-wall.html`
-- `wall-test.html`
-- `js/MemorialWall.js`
+- `avatar` vs `imageBase64`
+- `nickname` vs `name`
+- 不同页面的状态字段名不完全一致
 
-### 后端 / 数据层
-- `/api/wall`
-- 数据库表结构 / OSS 配置（未在前端仓库中完全显式暴露）
+#### [TODO/Debt]
+后续应把 API 契约文档化并收束兼容分支。
 
 ---
 
-## 8. 维护规则总结
+## 8. 对后续 Agent 的硬性建议
 
-1. **剧情轨与 3D 轨必须继续物理隔离**。
-2. **`story.json` 必须保持剧情 SSOT 地位**。
-3. **入口页头像来源必须有优先级**：摄像头 > 上传 > 昵称兜底。
-4. **提交协议应以 `imageBase64` 为主字段**，昵称文本必须同步保存。
-5. **视觉上坚持莫兰迪赛博底色、Bloom、PBR、动态粒子**。
-6. **所有明显的历史兼容与耦合问题都应以 `[TODO/Debt]` 标出，避免后续 Agent 误判为最终设计。**
+当后续 Agent 接手这个仓库时，请遵守以下原则：
+
+1. **先读主线，再改模块**
+   - 先理解 `story.json` / `Navigator.js` / `Renderer.js`
+   - 再改悬赏页或身份页
+
+2. **不要在单页里写死跨模块逻辑**
+   - 模块切换应通过 `PortalRouter` 或统一导航层
+
+3. **不要破坏主剧情的首入门槛**
+   - 剧情是系统解锁层，不应被绕过
+
+4. **不要随意新造视觉体系**
+   - 继续沿用“星空玻璃拟态”与冷色冷光语言
+
+5. **优先复用服务层**
+   - 星辰余额走 `EconomyManager`
+   - 商品/卡片走 `CommodityService`
+   - 页面切换走 `PortalRouter`
+   - 视觉过渡走 `FxEngine`
 
 ---
 
-## 9. 当前建议的后续整理项
+## 9. 项目一句话定义
 
-- [TODO/Debt] 将 `/api/wall` 的请求/响应契约补成独立说明。
-- [TODO/Debt] 明确后端保存的字段名：`name`、`nickname`、`imageBase64`、`avatarMode`。
-- [TODO/Debt] 评估是否继续保留 `avatar` 兼容字段。
-- [TODO/Debt] 考虑把 `MemorialWall.js` 再拆成入口层和沉浸层两个文件，减少单文件职责压力。
+这个项目不是一个“多页面网站”，而是一个**以主剧情为入口、以星辰经济为驱动、以身份卡与悬赏系统为延展的星际叙事门户**。
 
 ---
 
-## 10. 结论
+## 10. 未来推荐的统一方向
 
-当前项目的真实状态已经不是单一的剧情引擎，而是：
+后续最重要的演进方向不是再多做页面，而是：
 
-- 一条以 `story.json` 为 SSOT 的剧情轨
-- 一条以 `memorial-wall.html` / `wall-test.html` 为前后分工的独立 3D 星际相册轨
+- 统一入口逻辑
+- 统一 tab 导航
+- 统一按钮规范
+- 统一状态与路由抽象
+- 统一模块解锁策略
 
-后续所有 Agent 接手时，应先确认自己是在改哪条轨，再按对应模块边界进行变更，避免跨轨污染。
+只要这五件事收束好，这个项目就会从“迭代很快的多页集合”升级成真正可扩展的产品系统。

@@ -15,29 +15,36 @@
   <audio id="global-bgm" src="./audio/all.mp3" loop preload="auto"></audio>
 
   <!-- 启动拦截 -->
-  <div id="start-overlay" style="position:fixed; z-index:9999; inset:0; background:#0B0F19; display:flex; flex-direction:column; align-items:center; justify-content:center; color:#fff; cursor:pointer;">
-    <h1 style="font-size: clamp(28px, 5vw, 48px); letter-spacing: 4px; text-shadow: 0 0 10px #00F0FF; font-family: serif;">星辰典当行</h1>
-    <p style="opacity: 0.7; margin-top: 20px; font-size: 14px; letter-spacing: 2px;">[ 点击任意处，连接星轨 ]</p>
+  <div id="start-overlay" style="position:fixed; z-index:9999; inset:0; background:#0B0F19; display:flex; flex-direction:column; align-items:center; justify-content:center; color:#fff;">
+    <h1 style="font-size: clamp(28px, 5vw, 48px); letter-spacing: 4px; text-shadow: 0 0 10px #00F0FF; font-family: serif; margin-bottom: 24px;">星辰典当行</h1>
+    <p style="opacity: 0.7; margin-bottom: 28px; font-size: 14px; letter-spacing: 2px; text-align:center; line-height:1.8;">选择你要进入的星际界面</p>
+    <div style="display:flex; gap:14px; flex-wrap:wrap; justify-content:center; padding:0 20px;">
+      <button data-target="story.html" style="padding:14px 18px; border-radius:14px; border:1px solid rgba(0,240,255,0.25); background:rgba(0,240,255,0.08); color:#dffcff; cursor:pointer;">进入主剧情</button>
+      <button data-target="bounty-board.html" style="padding:14px 18px; border-radius:14px; border:1px solid rgba(0,240,255,0.25); background:rgba(0,240,255,0.08); color:#dffcff; cursor:pointer;">进入悬赏中枢</button>
+      <button data-target="bounty-delivery.html" style="padding:14px 18px; border-radius:14px; border:1px solid rgba(0,240,255,0.25); background:rgba(0,240,255,0.08); color:#dffcff; cursor:pointer;">进入交付归档</button>
+    </div>
   </div>
 
   <!-- 全屏 Iframe 承载所有子页面 -->
   <iframe id="app-frame" src="" style="width:100vw; height:100vh; border:none; display:none;"></iframe>
 
+  <script src="./js/PortalRouter.js"></script>
   <script>
-    document.getElementById('start-overlay').addEventListener('click', function () {
-      // 1. 突破浏览器限制，播放音频
-      const bgm = document.getElementById('global-bgm');
+    const overlay = document.getElementById('start-overlay');
+    const bgm = document.getElementById('global-bgm');
+    function enterPage(src) {
       bgm.volume = 0.5;
-      bgm.play().catch(() => {
-        // 如果自动播放被阻止，静默降级
+      bgm.play().catch(() => {});
+      overlay.style.display = 'none';
+      window.PortalRouter?.navigate?.(src.replace('.html', ''), {});
+    }
+    overlay.querySelectorAll('button[data-target]').forEach((btn) => {
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        enterPage(btn.dataset.target);
       });
-
-      // 2. 隐藏拦截器，显示 Iframe 并加载真实剧情页
-      this.style.display = 'none';
-      const frame = document.getElementById('app-frame');
-      frame.style.display = 'block';
-      frame.src = 'story.html';
     });
+    overlay.addEventListener('click', () => enterPage('story.html'));
   </script>
 </body>
 </html>

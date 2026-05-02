@@ -1,0 +1,68 @@
+[
+  {
+    "id": "bounty_001",
+    "title": "失落的星门钥匙",
+    "rarity": "SSR",
+    "reward": 3000,
+    "deadline": "3d 12h",
+    "image": "./image/bounty_001.jpg",
+    "lore": "被流放于第九轨道的钥匙，持有者可听见门后的潮汐。",
+    "status": "available",
+    "currentBid": 800
+  },
+  {
+    "id": "bounty_002",
+    "title": "梦境船坞的回声舵轮",
+    "rarity": "SR",
+    "reward": 1800,
+    "deadline": "2d 04h",
+    "image": "./image/bounty_002.jpg",
+    "lore": "旧世航船的舵轮，转动时会发出亡灵群星的低语。",
+    "status": "available",
+    "currentBid": 600
+  },
+  {
+    "id": "bounty_003",
+    "title": "第七码头的白色信标",
+    "rarity": "R",
+    "reward": 900,
+    "deadline": "18h 24m",
+    "image": "./image/bounty_003.jpg",
+    "lore": "一束没有方向的光，被谁握住，谁就会被它记住。",
+    "status": "available",
+    "currentBid": 240
+  },
+  {
+    "id": "bounty_004",
+    "title": "无名旅人的签名碎片",
+    "rarity": "SSR",
+    "reward": 5400,
+    "deadline": "5d 08h",
+    "image": "./image/bounty_004.jpg",
+    "lore": "所有跨越星海的誓言，最后都会碎成一枚签名。",
+    "status": "available",
+    "currentBid": 2200
+  },
+  {
+    "id": "bounty_005",
+    "title": "深空歌姬的静默麦克风",
+    "rarity": "SR",
+    "reward": 2600,
+    "deadline": "1d 10h",
+    "image": "./image/bounty_005.jpg",
+    "lore": "当她沉默时，整片星云都在聆听。",
+    "status": "available",
+    "currentBid": 700
+  },
+  {
+    "id": "bounty_006",
+    "title": "黑洞边缘的反光银币",
+    "rarity": "R",
+    "reward": 1200,
+    "deadline": "4d 03h",
+    "image": "./image/bounty_006.jpg",
+    "lore": "它总会回到你手里，像命运本身。",
+    "status": "available",
+    "currentBid": 300
+  }
+]
