@@ -82,12 +82,17 @@
   </head>
   <body>
     <div class="page-shell">
+      <div class="delivery-overlay">
         <aside class="delivery-sidebar">
           <div class="stack">
             <h1 class="title">悬赏交付页</h1>
             <div class="chip"><span class="label">当前契约编号</span><div class="value" id="contract-id">—</div></div>
             <div class="chip"><span class="label">星辰余额</span><div class="value"><strong id="delivery-balance">0</strong> ✦</div></div>
             <div class="chip"><span class="label">当前交付状态</span><div class="value" id="delivery-status">等待契约签收</div></div>
+            <a href="./bounty-board.html" class="chip" style="display:inline-block; text-decoration:none; color:#eafcff; cursor:pointer;">
+              <span class="label">返回</span>
+              <div class="value">← 回到悬赏中枢</div>
+            </a>
           </div>
           <div class="chip">
             <span class="label">命运回收提示</span>
@@ -139,10 +144,9 @@
             </section>
           </div>
         </main>
-      </section>
+      </div>
     </div>
 
-    <script src="./js/GlobalNavInjector.js"></script>
     <script src="./js/EconomyManager.js"></script>
     <script>
       const STORAGE_KEY = 'bounty_nexus_state';
@@ -438,7 +442,6 @@
 
       /* ── Init ── */
       window.addEventListener('DOMContentLoaded', () => {
-        window.GlobalNavInjector?.inject?.();
         syncBalance();
         updateUI();
         if (window.EconomyManager) window.EconomyManager.onChange(syncBalance);
