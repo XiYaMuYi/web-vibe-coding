@@ -162,3 +162,10 @@ h2 {
 .global-nav-item.is-locked:hover {
   opacity: 0.5;
 }
+
+/* ── 移动端隐藏顶部导航 ── */
+@media (max-width: 768px) {
+  #global-nav-injected {
+    display: none !important;
+  }
+}

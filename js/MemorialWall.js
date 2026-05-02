@@ -107,7 +107,7 @@
           position: absolute;
           left: 20px;
           top: calc(20px + env(safe-area-inset-top, 0px));
-          width: min(560px, calc(100vw - 40px));
+          width: min(448px, calc(80vw - 32px));
           background: rgba(255, 255, 255, 0.05);
           backdrop-filter: blur(12px);
           -webkit-backdrop-filter: blur(12px);
