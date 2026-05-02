@@ -5,9 +5,55 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
   <meta name="theme-color" content="#0B0F19" />
   <title>星辰典当行</title>
+  <link rel="stylesheet" href="./css/global-ui.css" />
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
     html, body { width: 100%; height: 100%; overflow: hidden; background: #000; }
+
+    /* ── 启动覆盖层 ── */
+    #start-overlay {
+      position: fixed; z-index: 9999; inset: 0; background: #0B0F19;
+      display: flex; flex-direction: column; align-items: center; justify-content: center; color: #fff;
+    }
+
+    /* ── 全息系统面板 ── */
+    #holo-panel {
+      position: fixed; z-index: 9998; inset: 0;
+      display: none; flex-direction: column; align-items: center; justify-content: center;
+      background: radial-gradient(circle at 50% 40%, rgba(11,15,25,0.98) 0%, rgba(4,6,12,0.96) 60%, #000 100%);
+    }
+    #holo-panel.is-visible { display: flex; }
+
+    .holo-title {
+      font-size: clamp(28px, 5vw, 48px); letter-spacing: 4px;
+      text-shadow: 0 0 10px #00F0FF; font-family: serif; margin-bottom: 8px; color: #fff;
+    }
+    .holo-subtitle {
+      opacity: 0.6; margin-bottom: 36px; font-size: 14px; letter-spacing: 2px; color: rgba(255,255,255,0.6);
+    }
+    .holo-grid {
+      display: grid; grid-template-columns: repeat(4, 1fr); gap: 20px;
+      max-width: 960px; width: 90%; padding: 0 20px;
+    }
+    .holo-card {
+      display: flex; flex-direction: column; align-items: center; text-align: center;
+      padding: 28px 20px; border-radius: 20px;
+      background: rgba(255,255,255,0.03); border: 1px solid rgba(0,240,255,0.12);
+      backdrop-filter: blur(12px); transition: all 0.35s ease; cursor: default;
+    }
+    .holo-card:hover {
+      transform: translateY(-4px);
+      border-color: rgba(0,240,255,0.3);
+      box-shadow: 0 12px 40px rgba(0,0,0,0.5), 0 0 24px rgba(0,240,255,0.1);
+    }
+    .holo-icon { font-size: 32px; margin-bottom: 12px; line-height: 1; }
+    .holo-name { font-size: 16px; font-weight: 600; letter-spacing: 0.08em; color: #dffcff; margin-bottom: 8px; }
+    .holo-desc { font-size: 12px; color: rgba(255,255,255,0.45); line-height: 1.6; margin-bottom: 18px; }
+    .holo-card .btn-primary { width: 100%; }
+
+    @media (max-width: 800px) {
+      .holo-grid { grid-template-columns: repeat(2, 1fr); gap: 14px; }
+    }
   </style>
 </head>
 <body style="margin: 0; overflow: hidden; background: #000;">
@@ -15,13 +61,61 @@
   <audio id="global-bgm" src="./audio/all.mp3" loop preload="auto"></audio>
 
   <!-- 启动拦截 -->
-  <div id="start-overlay" style="position:fixed; z-index:9999; inset:0; background:#0B0F19; display:flex; flex-direction:column; align-items:center; justify-content:center; color:#fff;">
+  <div id="start-overlay">
     <h1 style="font-size: clamp(28px, 5vw, 48px); letter-spacing: 4px; text-shadow: 0 0 10px #00F0FF; font-family: serif; margin-bottom: 24px;">星辰典当行</h1>
-    <p style="opacity: 0.7; margin-bottom: 28px; font-size: 14px; letter-spacing: 2px; text-align:center; line-height:1.8;">选择你要进入的星际界面</p>
+    <p style="opacity: 0.7; margin-bottom: 28px; font-size: 14px; letter-spacing: 2px; text-align: center; line-height: 1.8;">选择你要进入的星际界面</p>
     <div style="display:flex; gap:14px; flex-wrap:wrap; justify-content:center; padding:0 20px;">
-      <button data-target="story.html" style="padding:14px 18px; border-radius:14px; border:1px solid rgba(0,240,255,0.25); background:rgba(0,240,255,0.08); color:#dffcff; cursor:pointer;">进入主剧情</button>
-      <button data-target="bounty-board.html" style="padding:14px 18px; border-radius:14px; border:1px solid rgba(0,240,255,0.25); background:rgba(0,240,255,0.08); color:#dffcff; cursor:pointer;">进入悬赏中枢</button>
-      <button data-target="bounty-delivery.html" style="padding:14px 18px; border-radius:14px; border:1px solid rgba(0,240,255,0.25); background:rgba(0,240,255,0.08); color:#dffcff; cursor:pointer;">进入交付归档</button>
+      <button id="start-btn" class="btn-primary" type="button">✦ 启动序章</button>
+    </div>
+  </div>
+
+  <!-- 全息系统面板（已解锁态） -->
+  <div id="holo-panel">
+    <h1 class="holo-title">星辰典当行</h1>
+    <p class="holo-subtitle">系统已解锁 · 选择模块进入</p>
+    <div class="holo-grid">
+      <div class="holo-card">
+        <div class="holo-icon">&#x2726;</div>
+        <div class="holo-name">主剧情</div>
+        <div class="holo-desc">序章记忆回溯，重走命运轨迹</div>
+        <button class="btn-primary" data-target="story" type="button">进入</button>
+      </div>
+      <div class="holo-card">
+        <div class="holo-icon">&#x2727;</div>
+        <div class="holo-name">悬赏</div>
+        <div class="holo-desc">认领契约、竞价托管、交付结算</div>
+        <button class="btn-primary" data-target="bounty" type="button">进入</button>
+      </div>
+      <div class="holo-card">
+        <div class="holo-icon">&#x2726;</div>
+        <div class="holo-name">身份</div>
+        <div class="holo-desc">灵魂商铺、典当自我、真名刻印</div>
+        <button class="btn-primary" data-target="identity" type="button">进入</button>
+      </div>
+      <div class="holo-card">
+        <div class="holo-icon">&#x25c6;</div>
+        <div class="holo-name">归档</div>
+        <div class="holo-desc">悬赏交付、契约清算、命运归档</div>
+        <button class="btn-primary" data-target="archive" type="button">进入</button>
+      </div>
+      <div class="holo-card">
+        <div class="holo-icon">&#x2727;</div>
+        <div class="holo-name">拍卖场</div>
+        <div class="holo-desc">竞价拍卖、灵魂估价、契约交割</div>
+        <button class="btn-primary" data-target="auction" type="button">进入</button>
+      </div>
+      <div class="holo-card">
+        <div class="holo-icon">&#x25c6;</div>
+        <div class="holo-name">真理烙印</div>
+        <div class="holo-desc">抽卡系统、命运碎片、真理觉醒</div>
+        <button class="btn-primary" data-target="truth" type="button">进入</button>
+      </div>
+      <div class="holo-card">
+        <div class="holo-icon">&#x2726;</div>
+        <div class="holo-name">照片墙</div>
+        <div class="holo-desc">记忆画廊、时光回溯、灵魂印记</div>
+        <button class="btn-primary" data-target="wall" type="button">进入</button>
+      </div>
     </div>
   </div>
 
@@ -32,19 +126,54 @@
   <script>
     const overlay = document.getElementById('start-overlay');
     const bgm = document.getElementById('global-bgm');
-    function enterPage(src) {
+    const holoPanel = document.getElementById('holo-panel');
+    const startBtn = document.getElementById('start-btn');
+
+    function enterPage(target) {
       bgm.volume = 0.5;
       bgm.play().catch(() => {});
       overlay.style.display = 'none';
-      window.PortalRouter?.navigate?.(src.replace('.html', ''), {});
+      if (target) {
+        window.PortalRouter?.navigate?.(target, {});
+      }
     }
-    overlay.querySelectorAll('button[data-target]').forEach((btn) => {
+
+    function showHoloPanel() {
+      overlay.style.display = 'none';
+      holoPanel.classList.add('is-visible');
+    }
+
+    // 启动按钮：点击后检查解锁状态
+    startBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      bgm.volume = 0.5;
+      bgm.play().catch(() => {});
+
+      const unlocked = window.PortalRouter?.isStoryCompleted?.();
+      if (unlocked) {
+        showHoloPanel();
+      } else {
+        enterPage('story');
+      }
+    });
+
+    // 全息面板卡片按钮
+    holoPanel.querySelectorAll('button[data-target]').forEach((btn) => {
       btn.addEventListener('click', (e) => {
         e.stopPropagation();
         enterPage(btn.dataset.target);
       });
     });
-    overlay.addEventListener('click', () => enterPage('story.html'));
+
+    // 点击 overlay 背景也进入主剧情
+    overlay.addEventListener('click', () => {
+      const unlocked = window.PortalRouter?.isStoryCompleted?.();
+      if (unlocked) {
+        showHoloPanel();
+      } else {
+        enterPage('story');
+      }
+    });
   </script>
 </body>
 </html>

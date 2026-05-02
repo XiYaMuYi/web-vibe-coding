@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
     <meta name="theme-color" content="#020205" />
     <title>悬赏中枢</title>
+    <link rel="stylesheet" href="./css/global-ui.css" />
     <style>
       :root {
         color-scheme: dark;
@@ -55,10 +56,6 @@
       .chip .label { display:block; font-size:10px; letter-spacing:.12em; color:rgba(0,240,255,.6); margin-bottom:4px; text-transform:uppercase; }
       .chip .value { font-size:16px; }
 
-      .filter-row { display:flex; gap:8px; flex-wrap:wrap; margin-bottom:16px; }
-      .filter-btn { appearance:none; border:0; outline:none; border-radius:10px; padding:6px 14px; cursor:pointer; color:rgba(255,255,255,.6); background:rgba(255,255,255,.06); border:1px solid rgba(255,255,255,.08); font-size:12px; letter-spacing:.06em; transition:all .3s ease; }
-      .filter-btn:hover { color:#eafcff; background:rgba(0,240,255,.1); }
-      .filter-btn.is-active { color:#dffcff; background:linear-gradient(135deg,rgba(0,240,255,.18),rgba(107,75,255,.2)); border-color:rgba(0,240,255,.3); }
 
       .bounty-board-grid { position:relative; min-height:500px; }
       .bounty-card { position:absolute; border-radius:16px; overflow:hidden; background:rgba(20,25,40,.75); border:1px solid rgba(255,255,255,.12); box-shadow:0 12px 40px rgba(0,0,0,.4); transition:all .4s cubic-bezier(.23,1,.32,1); cursor:pointer; }
@@ -94,9 +91,6 @@
       .drop-zone:hover { border-color:rgba(0,240,255,.4); background:rgba(0,240,255,.04); }
       .drop-zone.is-dragover { border-color:rgba(0,240,255,.5); background:rgba(0,240,255,.08); }
 
-      .submit-btn { width:100%; appearance:none; border:0; outline:none; border-radius:12px; padding:12px; cursor:pointer; color:#dffcff; background:linear-gradient(135deg,rgba(0,240,255,.2),rgba(107,75,255,.22)); border:1px solid rgba(255,255,255,.1); font-size:14px; letter-spacing:.06em; box-shadow:0 6px 20px rgba(0,0,0,.4); transition:all .3s ease; }
-      .submit-btn:hover:not(:disabled) { transform:translateY(-1px); box-shadow:0 8px 28px rgba(0,0,0,.5),0 0 18px rgba(0,240,255,.15); }
-      .submit-btn:disabled { opacity:.5; cursor:not-allowed; }
 
       .form-status { display:none; padding:10px; border-radius:10px; margin-top:10px; font-size:12px; line-height:1.5; }
       .form-status.is-visible { display:block; }
@@ -107,6 +101,10 @@
       .shake { animation:shake .6s ease-in-out; }
 
       .back-btn { position:fixed; left:16px; top:12px; z-index:120; appearance:none; border:0; outline:none; border-radius:10px; padding:8px 14px; cursor:pointer; color:#dffcff; background:rgba(0,240,255,.08); border:1px solid rgba(255,255,255,.1); box-shadow:0 4px 16px rgba(0,0,0,.4); }
+
+      .bounty-nav-row { display:flex; gap:6px; align-items:center; }
+      .bounty-nav-link { padding:6px 12px; border-radius:999px; font-size:11px; letter-spacing:.08em; color:rgba(0,240,255,.7); background:rgba(0,240,255,.06); border:1px solid rgba(0,240,255,.15); text-decoration:none; transition:all .3s ease; }
+      .bounty-nav-link:hover { color:#dffcff; background:rgba(0,240,255,.12); border-color:rgba(0,240,255,.35); box-shadow:0 0 16px rgba(0,240,255,.15); }
 
       .modal-overlay { position:fixed; inset:0; z-index:100; display:none; place-items:center; background:rgba(0,0,0,.6); backdrop-filter:blur(8px); }
       .modal-overlay.is-open { display:grid; }
@@ -124,12 +122,7 @@
       .bid-row input { flex:1; background:rgba(255,255,255,.06); border:1px solid rgba(255,255,255,.1); border-radius:10px; padding:10px; color:#eafcff; font-size:16px; outline:none; }
       .bid-row input:focus { border-color:rgba(0,240,255,.35); }
       .bid-presets { display:flex; gap:6px; margin-bottom:14px; }
-      .bid-preset-btn { appearance:none; border:0; outline:none; border-radius:8px; padding:6px 12px; cursor:pointer; color:rgba(255,255,255,.6); background:rgba(255,255,255,.06); border:1px solid rgba(255,255,255,.08); font-size:11px; transition:all .25s ease; }
-      .bid-preset-btn:hover { color:#eafcff; background:rgba(0,240,255,.1); }
       .bid-actions { display:flex; gap:10px; }
-      .bid-submit { appearance:none; border:0; outline:none; border-radius:12px; padding:10px 20px; cursor:pointer; color:#dffcff; background:linear-gradient(135deg,rgba(0,240,255,.2),rgba(107,75,255,.22)); border:1px solid rgba(255,255,255,.1); font-size:13px; box-shadow:0 4px 16px rgba(0,0,0,.4); transition:all .3s ease; }
-      .bid-submit:hover { transform:translateY(-1px); }
-      .bid-cancel { appearance:none; border:0; outline:none; border-radius:12px; padding:10px 20px; cursor:pointer; color:rgba(255,255,255,.5); background:transparent; border:1px solid rgba(255,255,255,.08); font-size:13px; }
       .notice { display:none; padding:10px 14px; border-radius:10px; line-height:1.5; font-size:12px; }
       .notice.is-visible { display:block; }
       .notice.success { border:1px solid rgba(0,240,255,.25); background:rgba(0,240,255,.08); color:rgba(202,253,255,.92); }
@@ -139,6 +132,7 @@
         .board-layout { grid-template-columns:1fr; }
         .board-sidebar { border-right:0; border-bottom:1px solid rgba(255,255,255,.05); max-height:300px; }
         .modal-meta { grid-template-columns:repeat(2,1fr); }
+        .bounty-nav-row { display:none !important; }
       }
     </style>
   </head>
@@ -148,8 +142,15 @@
         <h1>&#x2727; 悬赏中枢</h1>
         <div class="actions">
           <div class="balance-chip">余额 <strong id="balance-val">0</strong> ✦</div>
-          <button class="delivery-btn" id="to-delivery-btn" type="button">进入交付</button>
+          <button class="btn-primary" id="to-delivery-btn" type="button">进入交付</button>
         </div>
+        <nav class="bounty-nav-row">
+          <a class="bounty-nav-link" href="./story.html">主剧情</a>
+          <a class="bounty-nav-link" href="./auction-board.html">拍卖场</a>
+          <a class="bounty-nav-link" href="./memorial-wall.html">身份</a>
+          <a class="bounty-nav-link" href="./truth-branding.html">真理烙印</a>
+          <a class="bounty-nav-link" href="./wall-test.html">照片墙</a>
+        </nav>
       </header>
       <div class="board-layout">
         <aside class="board-sidebar">
@@ -180,17 +181,17 @@
             <div class="image-preview" id="image-preview">
               <img id="preview-img" alt="预览" />
             </div>
-            <button class="submit-btn" id="submit-btn" type="button">✦ 发布悬赏令</button>
+            <button class="btn-primary" id="submit-btn" type="button" style="width:100%">✦ 发布悬赏令</button>
             <div class="form-status" id="form-status"></div>
           </div>
         </aside>
 
         <main class="board-content">
           <div class="filter-row">
-            <button class="filter-btn is-active" data-filter="all" type="button">全部</button>
-            <button class="filter-btn" data-filter="available" type="button">待认领</button>
-            <button class="filter-btn" data-filter="escrowed" type="button">托管中</button>
-            <button class="filter-btn" data-filter="completed" type="button">已完成</button>
+            <button class="nav-tab is-active" data-filter="all" type="button">全部</button>
+            <button class="nav-tab" data-filter="available" type="button">待认领</button>
+            <button class="nav-tab" data-filter="escrowed" type="button">托管中</button>
+            <button class="nav-tab" data-filter="completed" type="button">已完成</button>
           </div>
           <div class="bounty-board-grid" id="bounty-grid"></div>
         </main>
@@ -218,20 +219,21 @@
             <input id="bid-input" type="number" min="1" placeholder="输入托管金额" />
           </div>
           <div class="bid-presets">
-            <button class="bid-preset-btn" id="bid-p10" type="button">+10%</button>
-            <button class="bid-preset-btn" id="bid-p25" type="button">+25%</button>
-            <button class="bid-preset-btn" id="bid-p50" type="button">+50%</button>
-            <button class="bid-preset-btn" id="bid-all" type="button">全部</button>
+            <button class="nav-tab" id="bid-p10" type="button">+10%</button>
+            <button class="nav-tab" id="bid-p25" type="button">+25%</button>
+            <button class="nav-tab" id="bid-p50" type="button">+50%</button>
+            <button class="nav-tab" id="bid-all" type="button">全部</button>
           </div>
           <div class="bid-actions">
-            <button class="bid-submit" id="bid-submit" type="button">确认托管</button>
-            <button class="bid-cancel" id="modal-close" type="button">关闭</button>
+            <button class="btn-primary" id="bid-submit" type="button">确认托管</button>
+            <button class="btn-secondary" id="modal-close" type="button">关闭</button>
           </div>
           <div class="notice" id="bid-notice"></div>
         </div>
       </div>
     </div>
 
+    <script src="./js/GlobalNavInjector.js"></script>
     <script src="./js/EconomyManager.js"></script>
     <script>
       /* ── State ── */
@@ -398,9 +400,9 @@
               </div>
             </div>
             <div class="bounty-actions">
-              ${status === 'open' ? `<button class="small-btn claim-btn" data-id="${b.id}">✦ 认领</button>` : ''}
-              <button class="ghost-btn detail-btn" data-id="${b.id}">详情</button>
-              ${(status === 'claimed' || status === 'escrowed') ? `<button class="ghost-btn deliver-btn" data-id="${b.id}">交付</button>` : (status === 'delivered' ? '<span style="font-size:11px;color:rgba(0,240,255,0.7);margin-left:4px;">已交付</span>' : '')}
+              ${status === 'open' ? `<button class="btn-small claim-btn" data-id="${b.id}">✦ 认领</button>` : ''}
+              <button class="btn-ghost detail-btn" data-id="${b.id}">详情</button>
+              ${(status === 'claimed' || status === 'escrowed') ? `<button class="btn-ghost deliver-btn" data-id="${b.id}">交付</button>` : (status === 'delivered' ? '<span style="font-size:11px;color:rgba(0,240,255,0.7);margin-left:4px;">已交付</span>' : '')}
             </div>
           `;
           grid.appendChild(el);
@@ -693,9 +695,9 @@
 
       /* ── Filter buttons ── */
       function setupFilters() {
-        document.querySelectorAll('.filter-btn').forEach(btn => {
+        document.querySelectorAll('.nav-tab').forEach(btn => {
           btn.addEventListener('click', () => {
-            document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('is-active'));
+            document.querySelectorAll('.nav-tab').forEach(b => b.classList.remove('is-active'));
             btn.classList.add('is-active');
             activeFilter = btn.dataset.filter;
             renderBountyCards();
@@ -717,6 +719,7 @@
 
       /* ── Init ── */
       async function init() {
+        window.GlobalNavInjector?.inject?.();
         syncBalance();
         if (window.EconomyManager) {
           window.EconomyManager.onChange(syncBalance);

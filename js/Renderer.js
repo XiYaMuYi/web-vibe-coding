@@ -113,7 +113,7 @@ function renderOptions(options = []) {
     const locked = isLockedOption(option);
     const button = document.createElement('button');
     button.type = 'button';
-    button.className = locked ? 'story-option story-option--locked' : 'story-option story-option--active';
+    button.className = locked ? 'story-option story-option--locked btn-primary' : 'story-option story-option--active btn-primary';
     button.textContent = locked ? `🔒 ${option.label}` : option.label;
     button.dataset.to = option.to ?? '';
     if (option.setFlags) button.dataset.setFlags = JSON.stringify(option.setFlags);
@@ -133,7 +133,7 @@ function renderInteraction(interaction) {
 
   const button = document.createElement('button');
   button.type = 'button';
-  button.className = 'story-option story-option--active energy-core';
+  button.className = 'story-option story-option--active energy-core btn-primary';
   button.textContent = interaction.type === 'hold'
     ? '长按唤醒第一段记忆'
     : interaction.type === 'mash'
@@ -206,7 +206,7 @@ function scheduleSceneTransition(nextNodeId) {
 
   state.sceneTimerIds.push(window.setTimeout(() => {
     setSceneTransition(false);
-    renderNode(nextNodeId);
+    window.Navigator?.goTo?.(nextNodeId);
     window.setTimeout(() => {
       if (el.storyTitle) el.storyTitle.classList.add('dialog-fade-in');
       if (el.storyText) el.storyText.classList.add('dialog-fade-in');

@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
     <meta name="theme-color" content="#020205" />
     <title>Memorial Wall Portal</title>
+    <link rel="stylesheet" href="./css/global-ui.css" />
     <style>
       :root {
         color-scheme: dark;
@@ -61,54 +62,6 @@
           radial-gradient(circle at center, transparent 0 34%, rgba(0, 0, 0, 0.38) 60%, rgba(0, 0, 0, 0.72) 100%),
           radial-gradient(circle at 50% 42%, rgba(0, 240, 255, 0.06), transparent 28%);
         opacity: 1;
-      }
-
-      .global-reset-bar {
-        position: fixed;
-        right: 16px;
-        top: 16px;
-        z-index: 90;
-        display: flex;
-        gap: 10px;
-        flex-wrap: wrap;
-        align-items: center;
-      }
-
-      .global-reset-btn {
-        appearance: none;
-        -webkit-appearance: none;
-        border: 0;
-        outline: none;
-        border-radius: 14px;
-        padding: 10px 14px;
-        cursor: pointer;
-        color: #dffcff;
-        background: rgba(0, 240, 255, 0.08);
-        backdrop-filter: blur(12px);
-        -webkit-backdrop-filter: blur(12px);
-        border: 1px solid rgba(255, 255, 255, 0.1);
-        box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.5), 0 0 18px rgba(0, 240, 255, 0.12);
-        text-shadow: 0 0 12px rgba(0, 240, 255, 0.55);
-        transition: all 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
-      }
-
-      .global-reset-btn:hover {
-        transform: translateY(-1px);
-        background: rgba(0, 240, 255, 0.12);
-        box-shadow: 0 10px 40px rgba(0, 0, 0, 0.55), 0 0 28px rgba(0, 240, 255, 0.22);
-      }
-
-      .global-reset-tag {
-        padding: 8px 12px;
-        border-radius: 999px;
-        background: rgba(255, 255, 255, 0.05);
-        backdrop-filter: blur(12px);
-        -webkit-backdrop-filter: blur(12px);
-        border: 1px solid rgba(255, 255, 255, 0.1);
-        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.28);
-        color: rgba(234, 252, 255, 0.82);
-        font-size: 12px;
-        letter-spacing: 0.08em;
       }
 
       #market-overlay {
@@ -267,50 +220,6 @@
         flex-wrap: wrap;
       }
 
-      .btn-glow {
-        appearance: none;
-        -webkit-appearance: none;
-        border: 0;
-        outline: none;
-        border-radius: 14px;
-        padding: 12px 16px;
-        cursor: pointer;
-        color: #dffcff;
-        background: rgba(0, 240, 255, 0.08);
-        backdrop-filter: blur(12px);
-        -webkit-backdrop-filter: blur(12px);
-        box-shadow:
-          0 8px 32px 0 rgba(0, 0, 0, 0.5),
-          0 0 18px rgba(0, 240, 255, 0.12),
-          inset 0 1px 0 rgba(255, 255, 255, 0.08);
-        text-shadow: 0 0 12px rgba(0, 240, 255, 0.55);
-        transition: all 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
-        font-size: 13px;
-        letter-spacing: 0.06em;
-      }
-
-      .btn-glow:hover {
-        transform: translateY(-1px);
-        background: rgba(0, 240, 255, 0.12);
-        box-shadow:
-          0 10px 40px rgba(0, 0, 0, 0.55),
-          0 0 30px rgba(0, 240, 255, 0.22),
-          inset 0 1px 0 rgba(255, 255, 255, 0.1);
-      }
-
-      .btn-glow:active {
-        transform: scale(0.98);
-      }
-
-      .btn-glow.submit-primary {
-        background: linear-gradient(135deg, rgba(0, 240, 255, 0.22), rgba(107, 75, 255, 0.28));
-        box-shadow: 0 12px 34px rgba(0, 240, 255, 0.18), 0 0 34px rgba(107, 75, 255, 0.12);
-      }
-
-      .btn-glow.submit-primary:hover {
-        box-shadow: 0 16px 44px rgba(0, 240, 255, 0.26), 0 0 42px rgba(0, 240, 255, 0.18);
-      }
-
       .market-main {
         flex: 1;
         padding: 40px;
@@ -409,34 +318,8 @@
         font-size: 12px;
       }
 
-      .market-buy-btn,
-      .market-download-btn {
-        appearance: none;
-        -webkit-appearance: none;
-        border: 0;
-        outline: none;
-        width: 100%;
-        border-radius: 14px;
-        padding: 10px 12px;
-        cursor: pointer;
-        color: #dffcff;
-        background: rgba(0, 240, 255, 0.08);
-        backdrop-filter: blur(12px);
-        -webkit-backdrop-filter: blur(12px);
-        border: 1px solid rgba(255, 255, 255, 0.1);
-        box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.5), 0 0 18px rgba(0, 240, 255, 0.12);
-        text-shadow: 0 0 12px rgba(0, 240, 255, 0.55);
-        transition: all 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
-      }
-
-      .market-buy-btn:hover,
-      .market-download-btn:hover {
-        transform: translateY(-1px);
-        background: rgba(0, 240, 255, 0.12);
-        box-shadow: 0 10px 40px rgba(0, 0, 0, 0.55), 0 0 28px rgba(0, 240, 255, 0.22);
-      }
-
-      .market-buy-btn:disabled {
+      .market-buy-btn:disabled,
+      .market-download-btn:disabled {
         opacity: 0.45;
         cursor: not-allowed;
         box-shadow: none;
@@ -535,15 +418,12 @@
         justify-content: center;
       }
 
-      .purchase-modal-btns .btn-glow {
+      .purchase-modal-btns .btn-primary,
+      .purchase-modal-btns .btn-secondary,
+      .purchase-modal-btns .btn-danger {
         flex: 1;
         min-width: 120px;
         text-align: center;
-      }
-
-      .purchase-modal-btns .btn-glow.is-danger {
-        background: linear-gradient(135deg, rgba(255, 80, 80, 0.2), rgba(255, 140, 50, 0.15));
-        border-color: rgba(255, 100, 100, 0.3);
       }
 
       .camera-modal {
@@ -674,6 +554,9 @@
           width: calc(100vw - 16px);
         }
       }
+
+      /* Hide GlobalNavInjector (page has its own sidebar nav) */
+      #global-nav-injected { display: none !important; }
     </style>
   </head>
   <body>
@@ -685,8 +568,11 @@
           <h1 class="market-title">灵魂商铺</h1>
           <div class="stardust-balance">✦ <span id="stardust-val">0</span></div>
           <nav class="sidebar-nav">
+            <a href="./story.html">&#x2726; 主剧情</a>
+            <a href="./auction-board.html">&#x2726; 拍卖场</a>
             <a href="./bounty-board.html">&#x2726; 悬赏板</a>
             <a href="./truth-branding.html">&#x2726; 真名刻印</a>
+            <a href="./wall-test.html">&#x2726; 照片墙</a>
           </nav>
           <div class="avatar-preview">
             <canvas id="avatarCanvas" width="280" height="280"></canvas>
@@ -698,10 +584,10 @@
             <input type="text" id="traveler-name" placeholder="输入你星空中的称号..." autocomplete="off" />
             <div class="btn-row">
               <input id="uploadInput" type="file" accept="image/*" hidden />
-              <button id="uploadBtn" class="btn-glow" type="button">上传头像</button>
-              <button id="cameraBtn" class="btn-glow" type="button">摄像头</button>
+              <button id="uploadBtn" class="btn-secondary" type="button">上传头像</button>
+              <button id="cameraBtn" class="btn-secondary" type="button">摄像头</button>
             </div>
-            <button id="checkout-btn" class="btn-glow submit-primary" type="button">缔结契约，升维星图</button>
+            <button id="checkout-btn" class="btn-primary" type="button">缔结契约，升维星图</button>
             <div id="hintEl" class="hint is-hidden"></div>
           </div>
         </div>
@@ -720,10 +606,10 @@
           <img id="cameraShot" alt="摄像头照片" hidden />
         </div>
         <div class="camera-actions">
-          <button id="cameraCaptureBtn" class="btn" type="button">拍照</button>
-          <button id="cameraRetakeBtn" class="btn" type="button">重拍</button>
-          <button id="cameraUseBtn" class="btn" type="button">使用照片</button>
-          <button id="cameraCloseBtn" class="btn" type="button">关闭</button>
+          <button id="cameraCaptureBtn" class="btn-primary" type="button">拍照</button>
+          <button id="cameraRetakeBtn" class="btn-secondary" type="button">重拍</button>
+          <button id="cameraUseBtn" class="btn-primary" type="button">使用照片</button>
+          <button id="cameraCloseBtn" class="btn-secondary" type="button">关闭</button>
         </div>
         <div id="cameraStatus" class="status">准备连接摄像头...</div>
       </div>
@@ -741,17 +627,19 @@
           <span>灵魂正在显影……</span>
         </div>
         <div class="purchase-modal-btns">
-          <button class="btn-glow" id="purchaseCancelBtn" type="button">放弃</button>
-          <button class="btn-glow is-danger" id="purchaseConfirmBtn" type="button">确认购入，交付灵魂</button>
+          <button class="btn-secondary" id="purchaseCancelBtn" type="button">放弃</button>
+          <button class="btn-danger" id="purchaseConfirmBtn" type="button">确认购入，交付灵魂</button>
         </div>
       </div>
     </div>
 
     <script src="./js/global-reset.js"></script>
+    <script src="./js/GlobalNavInjector.js"></script>
     <script src="./js/EconomyManager.js"></script>
     <script src="./js/CommodityService.js"></script>
     <script>
       window.GlobalReset?.mount?.();
+      window.GlobalNavInjector?.inject?.();
 
       const travelerNameEl = document.getElementById('traveler-name');
       const uploadInput = document.getElementById('uploadInput');
@@ -984,7 +872,7 @@
           const imageUrl = item.imageUrl || item.url || '';
           const displayName = item.name || item.title || item.id;
           const purchased = window.CommodityService?.isPurchased?.(item.id);
-        card.innerHTML = `<img src="${imageUrl}" alt="${displayName}" loading="lazy" /><div class="market-info"><div class="market-meta"><span class="market-name">${displayName}</span><span>${item.price} 星尘</span></div><span class="market-rarity${item.rarity === 'SSR' ? ' is-ssr' : ''}">${item.rarity || 'SR'}</span><p class="market-desc">${item.description || ''}</p>${purchased ? '<button class="market-download-btn" data-buy-id="' + item.id + '" disabled>已拥有 / 下载</button>' : '<button class="market-buy-btn" data-buy-id="' + item.id + '">购买</button>'}</div>`;
+        card.innerHTML = `<img src="${imageUrl}" alt="${displayName}" loading="lazy" /><div class="market-info"><div class="market-meta"><span class="market-name">${displayName}</span><span>${item.price} 星尘</span></div><span class="market-rarity${item.rarity === 'SSR' ? ' is-ssr' : ''}">${item.rarity || 'SR'}</span><p class="market-desc">${item.description || ''}</p>${purchased ? '<button class="btn-secondary market-download-btn" data-buy-id="' + item.id + '" disabled>已拥有 / 下载</button>' : '<button class="btn-primary market-buy-btn" data-buy-id="' + item.id + '">购买</button>'}</div>`;
           commodityGridEl.appendChild(card);
         });
       }

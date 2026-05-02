@@ -79,6 +79,10 @@ const Navigator = (() => {
     state.currentNodeId = nodeId;
     state.history.push(nodeId);
 
+    if (nodeId === 'node_004' && !window.PortalRouter?.isStoryCompleted?.()) {
+      window.PortalRouter?.unlockSystem?.();
+    }
+
     window.StoryRenderer?.renderNode?.(nodeId);
     const activeNode = getNode(nodeId);
     if (activeNode?.audio?.bgm) {

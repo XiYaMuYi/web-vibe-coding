@@ -7,7 +7,9 @@
     <title>Surprise Vibe Coding</title>
     <link rel="stylesheet" href="./css/base.css" />
     <link rel="stylesheet" href="./css/effects.css" />
+    <link rel="stylesheet" href="./css/effects.css" />
     <link rel="stylesheet" href="./css/cinematic.css" />
+    <link rel="stylesheet" href="./css/global-ui.css" />
   </head>
   <body>
     <div id="bg-layer" style="position:fixed; width:100vw; height:100vh; z-index:1;"></div>
@@ -23,6 +25,7 @@
       <div id="action-area"></div>
     </div>
 
+    <script src="./js/GlobalNavInjector.js"></script>
     <script src="./js/EconomyManager.js"></script>
     <script src="./js/Interaction.js"></script>
     <script src="./js/FxEngine.js"></script>
@@ -33,6 +36,7 @@
     <script src="./js/app.js"></script>
     <script>
       window.addEventListener('DOMContentLoaded', () => {
+        window.GlobalNavInjector?.inject?.();
         window.AppController?.boot?.().catch((error) => console.error(error));
       });
     </script>

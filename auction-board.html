@@ -312,6 +312,24 @@ html, body {
   from { opacity:1; transform:translateX(-50%) translateY(0) scale(1); }
   to   { opacity:0; transform:translateX(-50%) translateY(-12px) scale(0.95); }
 }
+
+/* ── Global Nav ── */
+.auction-nav {
+  display: flex; gap: 6px; align-items: center; flex-wrap: wrap;
+}
+.auction-nav-link {
+  padding: 6px 12px; border-radius: 999px;
+  font-size: 11px; letter-spacing: 0.08em;
+  color: rgba(0, 240, 255, 0.7); background: rgba(0, 240, 255, 0.06);
+  border: 1px solid rgba(0, 240, 255, 0.15);
+  text-decoration: none; transition: all 0.3s ease;
+}
+.auction-nav-link:hover {
+  color: #dffcff; background: rgba(0, 240, 255, 0.12);
+  border-color: rgba(0, 240, 255, 0.35);
+  box-shadow: 0 0 16px rgba(0, 240, 255, 0.15);
+}
+
 @media (max-width: 768px) {
   #monolith-board { width: 95vw; height: 75vh; }
   .auction-item { padding: 10px 16px; gap: 12px; }
@@ -320,6 +338,7 @@ html, body {
   .modal-lore { width: 100%; height: 200px; }
   #auction-hud { padding: 10px 16px; }
   #auction-hud .title { font-size: 14px; letter-spacing: 0.08em; }
+  #auction-nav { display: none !important; }
 }
 </style>
 </head>
@@ -327,6 +346,13 @@ html, body {
 <div id="starfield"></div>
 <div id="auction-hud">
   <div class="title">轮回拍卖场 · SAMSARA AUCTION</div>
+  <nav class="auction-nav">
+    <a class="auction-nav-link" href="./story.html">主剧情</a>
+    <a class="auction-nav-link" href="./bounty-board.html">悬赏</a>
+    <a class="auction-nav-link" href="./memorial-wall.html">身份</a>
+    <a class="auction-nav-link" href="./truth-branding.html">真理烙印</a>
+    <a class="auction-nav-link" href="./wall-test.html">照片墙</a>
+  </nav>
   <div class="balance-box">
     <span class="icon"></span>
     <span id="hud-balance-val">0</span>

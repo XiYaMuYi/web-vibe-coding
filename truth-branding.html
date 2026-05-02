@@ -466,6 +466,44 @@
         100% { transform: translate3d(0, 0, 0) scale(1); }
       }
 
+      /* ===== TRUTH NAV ROW ===== */
+      .truth-nav-row {
+        position: fixed;
+        left: 190px;
+        top: 16px;
+        z-index: 90;
+        display: flex;
+        gap: 6px;
+        align-items: center;
+      }
+      .truth-nav-link {
+        padding: 10px 14px;
+        border-radius: 14px;
+        font-size: 13px;
+        letter-spacing: 0.06em;
+        color: #dffcff;
+        background: rgba(0, 240, 255, 0.06);
+        backdrop-filter: blur(12px);
+        -webkit-backdrop-filter: blur(12px);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        text-shadow: 0 0 12px rgba(0, 240, 255, 0.55);
+        transition: all 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+        box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.5), 0 0 18px rgba(0, 240, 255, 0.08);
+      }
+      .truth-nav-link:hover {
+        transform: translateY(-1px);
+        background: rgba(0, 240, 255, 0.12);
+        box-shadow: 0 10px 40px rgba(0, 0, 0, 0.55), 0 0 28px rgba(0, 240, 255, 0.22);
+      }
+
+      @media (max-width: 768px) {
+        .truth-nav-row { display: none !important; }
+      }
+
       /* Lore dissolve particles */
       .lore-particle {
         position: fixed;
@@ -484,6 +522,14 @@
     <div class="shell" id="shell">
       <!-- Back button -->
       <a class="back-btn" href="./memorial-wall.html">&#x2190; 返回商铺</a>
+
+      <!-- Nav row -->
+      <nav class="truth-nav-row">
+        <a class="truth-nav-link" href="./story.html">主剧情</a>
+        <a class="truth-nav-link" href="./auction-board.html">拍卖场</a>
+        <a class="truth-nav-link" href="./bounty-board.html">悬赏</a>
+        <a class="truth-nav-link" href="./wall-test.html">照片墙</a>
+      </nav>
 
       <!-- Stardust HUD -->
       <div class="stardust-hud">
